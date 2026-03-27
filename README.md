@@ -140,10 +140,10 @@ export ANTHROPIC_API_KEY=sk-ant-...
 
 The routing logic selects a provider based on model name:
 
-| Model pattern | Provider |
-|---|---|
-| `gpt-*`, `o1-*`, `o3-*` | OpenAI |
-| `claude-*` | Anthropic |
+| Model pattern           | Provider  |
+|-------------------------|-----------|
+| `gpt-*`, `o1-*`, `o3-*` | OpenAI    |
+| `claude-*`              | Anthropic |
 
 **Real mode incurs costs on your provider accounts.** Be aware of rate limits
 and pricing before running large experiments.

@@ -236,10 +236,10 @@ export ANTHROPIC_API_KEY=sk-ant-...
 
 In real mode, the provider is selected based on the model name:
 
-| Model pattern | Provider |
-|---|---|
-| `gpt-*`, `o1-*`, `o3-*` | OpenAI |
-| `claude-*` | Anthropic |
+| Model pattern           | Provider  |
+|-------------------------|-----------|
+| `gpt-*`, `o1-*`, `o3-*` | OpenAI    |
+| `claude-*`              | Anthropic |
 
 Providers are initialised lazily — if an experiment only uses OpenAI models, no
 Anthropic API key is required (and vice versa).
@@ -250,11 +250,11 @@ and pricing before running large experiments.
 
 ### Configuration reference
 
-| Setting | Environment variable | Default |
-|---|---|---|
-| LLM mode | `FEOTEST_LLM_MODE` | `mock` |
-| OpenAI API key | `OPENAI_API_KEY` | — |
-| Anthropic API key | `ANTHROPIC_API_KEY` | — |
+| Setting           | Environment variable | Default |
+|-------------------|----------------------|---------|
+| LLM mode          | `FEOTEST_LLM_MODE`   | `mock`  |
+| OpenAI API key    | `OPENAI_API_KEY`     | —       |
+| Anthropic API key | `ANTHROPIC_API_KEY`  | —       |
 
 ## Typical workflow
 
