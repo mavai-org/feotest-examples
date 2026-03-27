@@ -1,0 +1,27 @@
+[package]
+name = "feotest-examples"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Example experiments and probabilistic tests for feotest"
+license = "Apache-2.0"
+repository = "https://github.com/javai-org/feotest-examples"
+
+[dependencies]
+feotest = { path = "../feotest" }
+rand = "0.8"
+reqwest = { version = "0.12", features = ["blocking", "json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
