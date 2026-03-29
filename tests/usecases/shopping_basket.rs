@@ -16,8 +16,8 @@ use std::time::Instant;
 
 use feotest::model::{ContractViolation, TrialOutcome};
 
-use crate::llm::{ChatLlm, ChatLlmProvider};
-use crate::shopping::ShoppingActionValidator;
+use feotest_examples::llm::{ChatLlm, ChatLlmProvider};
+use feotest_examples::shopping::ShoppingActionValidator;
 
 /// The system prompt sent to the LLM. Instructs it to produce structured
 /// JSON in the expected format.
@@ -46,26 +46,6 @@ Respond with JSON only. No prose, no markdown, no explanation.";
 ///
 /// - `model`: the LLM model identifier (default: `"gpt-4o-mini"`)
 /// - `temperature`: controls response variability (default: `0.3`)
-///
-/// # Examples
-///
-/// ```
-/// use feotest_examples::usecases::ShoppingBasketUseCase;
-///
-/// let mut use_case = ShoppingBasketUseCase::new();
-///
-/// // Execute a trial and get the outcome for statistical analysis
-/// let outcome = use_case.translate_instruction("Add 2 apples");
-///
-/// // The outcome is either success or a contract violation —
-/// // never a panic. This is the fundamental distinction between
-/// // a contract failure (a statistical observation) and a defect.
-/// if outcome.is_success() {
-///     println!("Trial succeeded");
-/// } else {
-///     println!("Contract violation: {}", outcome.violation().unwrap());
-/// }
-/// ```
 pub struct ShoppingBasketUseCase {
     llm: Box<dyn ChatLlm>,
     model: String,
@@ -191,16 +171,6 @@ impl Default for ShoppingBasketUseCase {
 /// These 10 instructions cover a range of complexity: simple additions,
 /// removals, compound operations, and ambiguous natural language. They
 /// are cycled round-robin when the sample count exceeds 10.
-///
-/// # Examples
-///
-/// ```
-/// use feotest_examples::usecases::shopping_basket::standard_instructions;
-///
-/// let inputs = standard_instructions();
-/// assert_eq!(inputs.len(), 10);
-/// assert_eq!(inputs[0], "Add 2 apples");
-/// ```
 #[must_use]
 pub fn standard_instructions() -> Vec<String> {
     vec![
@@ -215,36 +185,4 @@ pub fn standard_instructions() -> Vec<String> {
         "Add a dozen eggs".to_string(),
         "I'd like to remove all the vegetables".to_string(),
     ]
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::llm::MockChatLlm;
-
-    #[test]
-    fn succeeds_with_low_temperature() {
-        let llm = MockChatLlm::with_seed(42);
-        let uc = ShoppingBasketUseCase::with_llm(Box::new(llm));
-
-        let outcome = uc.translate_instruction("Add 2 apples");
-        assert!(outcome.is_success(), "Expected success at low temperature");
-    }
-
-    #[test]
-    fn configuration_accessors() {
-        let mut uc = ShoppingBasketUseCase::new();
-        assert_eq!(uc.model(), "gpt-4o-mini");
-        assert!((uc.temperature() - 0.3).abs() < 1e-10);
-
-        uc.set_model("claude-sonnet-4-6");
-        uc.set_temperature(0.7);
-        assert_eq!(uc.model(), "claude-sonnet-4-6");
-        assert!((uc.temperature() - 0.7).abs() < 1e-10);
-    }
-
-    #[test]
-    fn standard_instructions_has_ten_entries() {
-        assert_eq!(standard_instructions().len(), 10);
-    }
 }

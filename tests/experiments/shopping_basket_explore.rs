@@ -10,10 +10,13 @@
 //! cargo test --test shopping_basket_explore -- --nocapture
 //! ```
 
+#[path = "../usecases/mod.rs"]
+mod usecases;
+
 use feotest::experiment::ExploreExperiment;
-use feotest_examples::usecases::ShoppingBasketUseCase;
-use feotest_examples::usecases::shopping_basket::standard_instructions;
 use std::sync::{Arc, Mutex};
+use usecases::ShoppingBasketUseCase;
+use usecases::shopping_basket::standard_instructions;
 
 /// Compares different model configurations for the shopping basket.
 ///

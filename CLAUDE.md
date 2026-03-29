@@ -43,8 +43,10 @@ statistical expectations, not a 100% sample pass rate.
 - **src/llm/** — LLM infrastructure: `ChatLlm` trait, mock with temperature-dependent reliability, real provider routing
 - **src/shopping/** — Shopping domain types, action model, and response validator
 - **src/payment/** — Payment gateway trait and mock with configurable failure rate
-- **src/usecases/** — Use case adapters wrapping application services for feotest
-- **tests/** — Integration tests: measure experiments, explore experiments, and probabilistic tests
+- **tests/usecases/** — Use case adapters wrapping application services for feotest (shared test module)
+- **tests/experiments/** — Measure and explore experiments that establish baselines
+- **tests/** — Probabilistic tests that verify service behaviour against thresholds
+- **specs/** — Committed baseline spec files produced by measure experiments
 
 ## feotest dependency
 

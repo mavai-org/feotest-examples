@@ -35,4 +35,3 @@
 pub mod llm;
 pub mod payment;
 pub mod shopping;
-pub mod usecases;

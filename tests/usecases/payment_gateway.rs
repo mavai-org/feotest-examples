@@ -14,7 +14,7 @@ use std::time::Instant;
 
 use feotest::model::{ContractViolation, TrialOutcome};
 
-use crate::payment::{MockPaymentGateway, PaymentGateway};
+use feotest_examples::payment::{MockPaymentGateway, PaymentGateway};
 
 /// A use case for charging a payment card and verifying the transaction.
 ///
@@ -22,18 +22,6 @@ use crate::payment::{MockPaymentGateway, PaymentGateway};
 ///
 /// The transaction must succeed (functional correctness only; latency
 /// testing is not yet supported in feotest).
-///
-/// # Examples
-///
-/// ```
-/// use feotest_examples::usecases::PaymentGatewayUseCase;
-///
-/// let use_case = PaymentGatewayUseCase::new();
-/// let outcome = use_case.charge_card("tok_visa_4242", 1999);
-///
-/// // Almost certainly succeeds (99.97% rate), but not guaranteed.
-/// println!("Success: {}", outcome.is_success());
-/// ```
 pub struct PaymentGatewayUseCase {
     gateway: Box<dyn PaymentGateway>,
     region: String,
@@ -95,30 +83,5 @@ impl PaymentGatewayUseCase {
 impl Default for PaymentGatewayUseCase {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn mostly_succeeds() {
-        let uc = PaymentGatewayUseCase::new();
-        let mut successes = 0;
-        for _ in 0..50 {
-            if uc.charge_card("tok_visa_4242", 1999).is_success() {
-                successes += 1;
-            }
-        }
-        assert!(successes >= 45, "Expected >= 45 successes, got {successes}");
-    }
-
-    #[test]
-    fn region_configuration() {
-        let mut uc = PaymentGatewayUseCase::new();
-        assert_eq!(uc.region(), "US");
-        uc.set_region("EU");
-        assert_eq!(uc.region(), "EU");
     }
 }
