@@ -44,6 +44,10 @@ Respond with JSON only. No prose, no markdown, no explanation.";
 ///
 /// # Configuration
 ///
+/// All configuration is set at construction time. The use case is immutable
+/// after construction — this is a deliberate design choice that preserves
+/// the i.i.d. assumption required for valid statistical inference.
+///
 /// - `model`: the LLM model identifier (default: `"gpt-4o-mini"`)
 /// - `temperature`: controls response variability (default: `0.3`)
 pub struct ShoppingBasketUseCase {
@@ -71,7 +75,7 @@ impl ShoppingBasketUseCase {
     ///
     /// Useful for testing with a mock that has a fixed seed.
     #[must_use]
-    pub fn with_llm(llm: Box<dyn ChatLlm>) -> Self {
+    pub fn llm(llm: Box<dyn ChatLlm>) -> Self {
         Self {
             llm,
             model: "gpt-4o-mini".to_string(),
@@ -80,37 +84,25 @@ impl ShoppingBasketUseCase {
         }
     }
 
-    /// The current LLM model identifier.
+    /// Sets the LLM model identifier at construction time.
     #[must_use]
-    pub fn model(&self) -> &str {
-        &self.model
-    }
-
-    /// Sets the LLM model identifier.
-    pub fn set_model(&mut self, model: impl Into<String>) {
+    pub fn model(mut self, model: impl Into<String>) -> Self {
         self.model = model.into();
+        self
     }
 
-    /// The current temperature.
+    /// Sets the temperature at construction time.
     #[must_use]
-    pub const fn temperature(&self) -> f64 {
-        self.temperature
-    }
-
-    /// Sets the temperature.
-    pub const fn set_temperature(&mut self, temperature: f64) {
+    pub fn temperature(mut self, temperature: f64) -> Self {
         self.temperature = temperature;
+        self
     }
 
-    /// The current system prompt.
+    /// Sets the system prompt at construction time.
     #[must_use]
-    pub fn system_prompt(&self) -> &str {
-        &self.system_prompt
-    }
-
-    /// Sets the system prompt.
-    pub fn set_system_prompt(&mut self, prompt: impl Into<String>) {
+    pub fn system_prompt(mut self, prompt: impl Into<String>) -> Self {
         self.system_prompt = prompt.into();
+        self
     }
 
     /// Translates a natural language instruction into structured shopping

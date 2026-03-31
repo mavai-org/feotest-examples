@@ -365,11 +365,13 @@ explore experiments always use the builder API.
 ```rust
 let inputs = standard_instructions();
 
-let mut uc_low = ShoppingBasketUseCase::new();
-uc_low.set_temperature(0.1);
+let uc_low = ShoppingBasketUseCase::new()
+    .model("gpt-4o-mini")
+    .temperature(0.1);
 
-let mut uc_high = ShoppingBasketUseCase::new();
-uc_high.set_temperature(0.5);
+let uc_high = ShoppingBasketUseCase::new()
+    .model("gpt-4o-mini")
+    .temperature(0.5);
 
 ExploreExperiment::new("ShoppingBasketUseCase", 20, &inputs, |uc: &ShoppingBasketUseCase, input| {
     uc.translate_instruction(input)

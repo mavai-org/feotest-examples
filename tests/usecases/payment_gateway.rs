@@ -18,6 +18,10 @@ use feotest_examples::payment::{MockPaymentGateway, PaymentGateway};
 
 /// A use case for charging a payment card and verifying the transaction.
 ///
+/// All configuration is set at construction time. The use case is immutable
+/// after construction — this preserves the i.i.d. assumption required for
+/// valid statistical inference.
+///
 /// # Contract postcondition
 ///
 /// The transaction must succeed (functional correctness only; latency
@@ -39,22 +43,18 @@ impl PaymentGatewayUseCase {
 
     /// Creates a use case with a specific gateway implementation.
     #[must_use]
-    pub fn with_gateway(gateway: Box<dyn PaymentGateway>) -> Self {
+    pub fn gateway(gateway: Box<dyn PaymentGateway>) -> Self {
         Self {
             gateway,
             region: "US".to_string(),
         }
     }
 
-    /// The configured region.
+    /// Sets the region at construction time.
     #[must_use]
-    pub fn region(&self) -> &str {
-        &self.region
-    }
-
-    /// Sets the region.
-    pub fn set_region(&mut self, region: impl Into<String>) {
+    pub fn region(mut self, region: impl Into<String>) -> Self {
         self.region = region.into();
+        self
     }
 
     /// Charges a card and evaluates the service contract.

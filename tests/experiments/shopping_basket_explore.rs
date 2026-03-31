@@ -31,14 +31,14 @@ use usecases::shopping_basket::standard_instructions;
 fn explore_model_configurations() {
     let inputs = standard_instructions();
 
-    // Each configuration is a fully constructed, immutable use case.
-    let mut uc_low = ShoppingBasketUseCase::new();
-    uc_low.set_model("gpt-4o-mini");
-    uc_low.set_temperature(0.1);
+    // Each configuration is fully constructed and immutable.
+    let uc_low = ShoppingBasketUseCase::new()
+        .model("gpt-4o-mini")
+        .temperature(0.1);
 
-    let mut uc_high = ShoppingBasketUseCase::new();
-    uc_high.set_model("gpt-4o-mini");
-    uc_high.set_temperature(0.5);
+    let uc_high = ShoppingBasketUseCase::new()
+        .model("gpt-4o-mini")
+        .temperature(0.5);
 
     let result =
         ExploreExperiment::new("ShoppingBasketUseCase", 20, &inputs, |uc: &ShoppingBasketUseCase, input| {
