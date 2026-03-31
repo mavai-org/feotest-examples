@@ -12,6 +12,7 @@
 //! different (and sometimes invalid) responses across invocations, depending
 //! on the model and temperature.
 
+use std::fmt;
 use std::time::Instant;
 
 use feotest::model::{ContractViolation, TrialOutcome};
@@ -149,6 +150,12 @@ impl ShoppingBasketUseCase {
             Ok(_actions) => TrialOutcome::success(elapsed),
             Err(violation) => TrialOutcome::failure(violation, elapsed),
         }
+    }
+}
+
+impl fmt::Display for ShoppingBasketUseCase {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} (temperature={})", self.model, self.temperature)
     }
 }
 

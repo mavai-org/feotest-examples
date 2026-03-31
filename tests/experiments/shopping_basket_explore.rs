@@ -44,8 +44,8 @@ fn explore_model_configurations() {
         ExploreExperiment::new("ShoppingBasketUseCase", 20, &inputs, |uc: &ShoppingBasketUseCase, input| {
             uc.translate_instruction(input)
         })
-        .config("gpt-4o-mini (temp=0.1)", &uc_low)
-        .config("gpt-4o-mini (temp=0.5)", &uc_high)
+        .config(&uc_low)
+        .config(&uc_high)
         .experiment_id("model-comparison")
         .run();
 

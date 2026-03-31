@@ -10,6 +10,7 @@
 //! below a hypothetical 99.99% SLA. This means sufficiently large
 //! sample runs will detect the gap.
 
+use std::fmt;
 use std::time::Instant;
 
 use feotest::model::{ContractViolation, TrialOutcome};
@@ -77,6 +78,12 @@ impl PaymentGatewayUseCase {
                 elapsed,
             )
         }
+    }
+}
+
+impl fmt::Display for PaymentGatewayUseCase {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "PaymentGateway (region={})", self.region)
     }
 }
 
