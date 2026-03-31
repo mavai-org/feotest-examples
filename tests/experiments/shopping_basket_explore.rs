@@ -2,8 +2,8 @@
 //!
 //! Rapidly compares multiple LLM model configurations to identify which
 //! performs best before committing to a full measurement. Each configuration
-//! is tested with a small number of samples — enough to spot clear winners,
-//! not enough for statistical rigour.
+//! is a pre-built, immutable use case instance — the framework never mutates
+//! a use case during sampling.
 //!
 //! Run with:
 //! ```text
@@ -14,11 +14,14 @@
 mod usecases;
 
 use feotest::experiment::ExploreExperiment;
-use std::sync::{Arc, Mutex};
 use usecases::ShoppingBasketUseCase;
 use usecases::shopping_basket::standard_instructions;
 
 /// Compares different model configurations for the shopping basket.
+///
+/// Each configuration is constructed upfront with its own temperature
+/// and model settings. The trial function is declared once and shared
+/// across all configurations.
 ///
 /// In mock mode, all configurations use the same mock — the comparison
 /// demonstrates the framework's exploration mechanics rather than real
@@ -28,28 +31,23 @@ use usecases::shopping_basket::standard_instructions;
 fn explore_model_configurations() {
     let inputs = standard_instructions();
 
-    // Shared use case behind a mutex so the explore closures can mutate it
-    let use_case = Arc::new(Mutex::new(ShoppingBasketUseCase::new()));
+    // Each configuration is a fully constructed, immutable use case.
+    let mut uc_low = ShoppingBasketUseCase::new();
+    uc_low.set_model("gpt-4o-mini");
+    uc_low.set_temperature(0.1);
 
-    let uc_a = Arc::clone(&use_case);
-    let uc_b = Arc::clone(&use_case);
-    let uc_trial = Arc::clone(&use_case);
+    let mut uc_high = ShoppingBasketUseCase::new();
+    uc_high.set_model("gpt-4o-mini");
+    uc_high.set_temperature(0.5);
 
-    let result = ExploreExperiment::new("ShoppingBasketUseCase", 20, &inputs, move |instruction| {
-        uc_trial.lock().unwrap().translate_instruction(instruction)
-    })
-    .config("gpt-4o-mini (temp=0.1)", move || {
-        let mut uc = uc_a.lock().unwrap();
-        uc.set_model("gpt-4o-mini");
-        uc.set_temperature(0.1);
-    })
-    .config("gpt-4o-mini (temp=0.5)", move || {
-        let mut uc = uc_b.lock().unwrap();
-        uc.set_model("gpt-4o-mini");
-        uc.set_temperature(0.5);
-    })
-    .with_experiment_id("model-comparison")
-    .run();
+    let result =
+        ExploreExperiment::new("ShoppingBasketUseCase", 20, &inputs, |uc: &ShoppingBasketUseCase, input| {
+            uc.translate_instruction(input)
+        })
+        .config("gpt-4o-mini (temp=0.1)", &uc_low)
+        .config("gpt-4o-mini (temp=0.5)", &uc_high)
+        .experiment_id("model-comparison")
+        .run();
 
     println!("=== Shopping Basket Exploration ===");
     println!("Configurations tested: {}", result.configs().len());

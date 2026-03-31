@@ -6,7 +6,7 @@
 //! `#[probabilistic_test]` macro for compact declaration.
 //!
 //! The spec-driven test (`spec_driven_sample_size_first`) loads a committed
-//! baseline spec from `specs/ShoppingBasketUseCase.yaml`. This reflects the
+//! baseline spec from `tests/baselines/ShoppingBasketUseCase.yaml`. This reflects the
 //! recommended workflow: measure once (rarely), commit the spec, then test
 //! against it repeatedly.
 //!
@@ -61,7 +61,7 @@ fn controlled_single_instruction() -> bool {
 ///
 /// This is the recommended workflow:
 /// 1. Run a measure experiment to establish a baseline (see `shopping_basket_measure`)
-/// 2. Review and commit the spec to `specs/`
+/// 2. Review and commit the spec to `tests/baselines/`
 /// 3. Run probabilistic tests against the committed spec — repeatedly, in CI,
 ///    across releases
 ///
@@ -69,9 +69,9 @@ fn controlled_single_instruction() -> bool {
 /// developer specifies only the sample count and confidence level; the
 /// framework does the rest.
 #[probabilistic_test(
-    samples = 200,
+    samples = 500,
     confidence = 0.95,
-    spec = "specs/ShoppingBasketUseCase.yaml",
+    spec = "tests/baselines/ShoppingBasketUseCase.yaml",
     threshold_origin = "empirical"
 )]
 fn spec_driven_sample_size_first(input: &str) -> bool {

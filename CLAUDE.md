@@ -45,8 +45,8 @@ statistical expectations, not a 100% sample pass rate.
 - **src/payment/** — Payment gateway trait and mock with configurable failure rate
 - **tests/usecases/** — Use case adapters wrapping application services for feotest (shared test module)
 - **tests/experiments/** — Measure and explore experiments that establish baselines
-- **tests/** — Probabilistic tests that verify service behaviour against thresholds
-- **specs/** — Committed baseline spec files produced by measure experiments
+- **tests/** — Probabilistic tests: macro variants (`*_test.rs`) and builder variants (`*_test_builder.rs`)
+- **tests/baselines/** — Committed baseline spec files produced by measure experiments
 
 ## feotest dependency
 

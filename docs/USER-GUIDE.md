@@ -79,7 +79,7 @@ tests/usecases/             ← feotest use case adapters (shared test module)
 src/llm/                    ← application code (no feotest dependency)
 src/shopping/
 src/payment/
-specs/                      ← committed baseline specs
+tests/baselines/            ← committed baseline specs
 ```
 
 The `llm`, `shopping`, and `payment` modules in `src/` contain the application
@@ -122,8 +122,27 @@ cargo test --test shopping_basket_measure -- --nocapture
 ```
 
 The measurement runs 1000 samples, computes a Wilson score confidence interval
-for the true success probability, and writes a spec file. Probabilistic tests
-can derive their pass/fail thresholds from this baseline.
+for the true success probability, and writes a spec file to `tests/baselines/`. The spec captures the observed
+success rate, the Wilson lower bound (used as the derived minimum pass rate),
+and execution metadata:
+
+```
+tests/baselines/
+└── ShoppingBasketUseCase.yaml
+```
+
+The spec file is intended to be committed to the repository. Probabilistic
+tests reference it by path and derive their pass/fail thresholds from the
+baseline's Wilson lower bound. The workflow is:
+
+1. Run the measure experiment
+2. Review the generated spec — `git diff tests/baselines/` shows what changed
+3. Commit when the baseline looks correct
+4. Probabilistic tests now verify against the committed baseline
+
+Re-running a measure experiment overwrites the existing spec. This is
+intentional: when the service or its configuration changes, you re-measure,
+review the new baseline, and commit the update.
 
 The measurement is declared with the `#[measure_experiment]` macro — see the
 _Measure_ section under _Understanding the test types_ for the declaration
@@ -154,21 +173,35 @@ determine the verdict.
 feotest provides two ways to declare experiments and tests:
 
 - **Macros** (`#[probabilistic_test]`, `#[measure_experiment]`) — compact,
-  declarative, suitable for the common cases.
-- **Builder API** (`ProbabilisticTestBuilder`, `MeasureExperiment`) — full
-  control, required for multi-phase workflows or dynamic configuration.
+  declarative, suitable when inputs are static.
+- **Builder API** (`ProbabilisticTest`, `MeasureExperiment`) — required when
+  inputs are dynamic, shared, or generated at runtime.
 
-The examples in this project use macros throughout.
+Both are shown side by side below. The macro expands to builder calls
+internally — the builder is not a separate system. For each scenario, this
+project includes both a macro test and a builder test (see `*_test.rs` and
+`*_test_builder.rs` files).
+
+### The parameter triangle
+
+A probabilistic test has three interdependent statistical parameters:
+**sample size**, **threshold**, and **confidence**. The developer fixes two;
+feotest computes the third. Attempting to fix all three is rejected at runtime.
+
+| Developer fixes | Framework computes | Baseline needed? |
+|---|---|---|
+| samples + threshold | confidence | No |
+| samples + confidence | threshold (from baseline) | Yes |
+| confidence + MDE + power | sample size + threshold | Yes |
 
 ### Threshold-first
 
-You specify the sample count and the minimum pass rate. feotest runs the
-samples, computes a confidence interval for the true success probability, and
-determines whether the lower bound exceeds your threshold.
+Fix samples and threshold. The simplest approach — works when you have a
+clear threshold from an SLA, policy, or prior measurement.
+
+**Macro:**
 
 ```rust
-use feotest::probabilistic_test;
-
 #[probabilistic_test(samples = 100, threshold = 0.80, threshold_origin = "empirical")]
 fn threshold_first_verification(input: &str) -> bool {
     ShoppingBasketUseCase::new()
@@ -177,66 +210,89 @@ fn threshold_first_verification(input: &str) -> bool {
 }
 ```
 
-This is the simplest approach and works well when you have a clear threshold —
-either from an SLA (normative) or from a prior measurement (empirical).
+**Builder:**
+
+```rust
+let inputs = standard_instructions();
+let use_case = ShoppingBasketUseCase::new();
+
+ProbabilisticTest::new("ShoppingBasketUseCase", &inputs, |input| {
+    use_case.translate_instruction(input)
+})
+.samples(100)
+.threshold(0.80)
+.threshold_origin(ThresholdOrigin::Empirical)
+.run();
+```
 
 For SLA-driven services, add provenance metadata:
 
 ```rust
-#[probabilistic_test(
-    samples = 200,
-    threshold = 0.99,
-    threshold_origin = "sla",
-    contract_ref = "Payment Provider SLA v2.3, Section 4.1"
-)]
-fn sla_verification() -> bool {
-    PaymentGatewayUseCase::new()
-        .charge_card("tok_visa_4242", 1999)
-        .is_success()
-}
+ProbabilisticTest::new("PaymentGatewayUseCase", &inputs, |_input| {
+    use_case.charge_card("tok_visa_4242", 1999)
+})
+.samples(200)
+.threshold(0.99)
+.threshold_origin(ThresholdOrigin::Sla)
+.contract_ref("Payment Provider SLA v2.3, Section 4.1")
+.run();
 ```
 
 ### Measure — establishing a baseline
 
-Before running spec-driven tests, you need a baseline. The `#[measure_experiment]`
-macro runs many trials, computes statistics, and writes a spec file:
+Before running spec-driven tests, you need a baseline. A measure experiment
+runs many trials, computes statistics, and writes a spec file.
+
+**Macro:**
 
 ```rust
-use feotest::measure_experiment;
-
 #[measure_experiment(
     use_case = "ShoppingBasketUseCase",
     samples = 1000,
     inputs = ["Add 2 apples", "Remove the milk", "Clear the basket"],
-    experiment_id = "baseline-v1",
-    spec_dir = "target/test-specs"
+    experiment_id = "baseline-v1"
 )]
 fn measure_shopping_basket_baseline(input: &str) -> TrialOutcome {
     ShoppingBasketUseCase::new().translate_instruction(input)
 }
 ```
 
-The `inputs` are cycled round-robin across the requested sample count.
+**Builder:**
+
+```rust
+let inputs = standard_instructions();
+let use_case = ShoppingBasketUseCase::new();
+
+MeasureExperiment::new("ShoppingBasketUseCase", 1000, &inputs, |input| {
+    use_case.translate_instruction(input)
+})
+.experiment_id("baseline-v1")
+.run();
+```
+
+The `inputs` are cycled round-robin across the requested sample count. The
+spec is written to `tests/baselines/` by default.
 
 ### Sample-size-first with spec
 
-You specify the sample count and confidence level. feotest loads a committed
-baseline spec and derives the threshold automatically. This separates the
-"what is acceptable" question (answered by a measurement experiment, run once)
-from the "does the service still meet it" question (answered by the test, run
-repeatedly).
+Fix samples and confidence. feotest loads a committed baseline spec and
+derives the threshold automatically. This separates the "what is acceptable"
+question (answered by measurement, run once) from the "does the service still
+meet it" question (answered by the test, run repeatedly).
 
 The recommended workflow:
 
 1. Run a measure experiment to produce a spec file
-2. Review the spec and commit it to `specs/`
+2. Review the spec and commit it to `tests/baselines/`
 3. Write a probabilistic test that references the committed spec
+
+**Macro:**
 
 ```rust
 #[probabilistic_test(
-    samples = 200,
+    samples = 500,
     confidence = 0.95,
-    spec = "specs/ShoppingBasketUseCase.yaml",
+    spec = "tests/baselines/ShoppingBasketUseCase.yaml",
     threshold_origin = "empirical"
 )]
 fn spec_driven_sample_size_first(input: &str) -> bool {
@@ -246,8 +302,25 @@ fn spec_driven_sample_size_first(input: &str) -> bool {
 }
 ```
 
-The test runs frequently — in CI, across releases — while the baseline is
-updated only when the service's expected behaviour changes.
+**Builder:**
+
+```rust
+let inputs = standard_instructions();
+let use_case = ShoppingBasketUseCase::new();
+
+ProbabilisticTest::new("ShoppingBasketUseCase", &inputs, |input| {
+    use_case.translate_instruction(input)
+})
+.samples(500)
+.confidence(0.95)
+.threshold_origin(ThresholdOrigin::Empirical)
+.run();
+```
+
+The builder resolves the baseline automatically from the use case ID — no
+explicit path needed. The test runs frequently — in CI, across releases —
+while the baseline is updated only when the service's expected behaviour
+changes.
 
 ### Smoke
 
@@ -256,6 +329,8 @@ the statistical rigour warnings that would normally flag an undersized sample,
 making this suitable for quick health checks in CI without the overhead of a
 full verification run.
 
+**Macro:**
+
 ```rust
 #[probabilistic_test(samples = 20, threshold = 0.70, intent = "smoke")]
 fn smoke_test(input: &str) -> bool {
@@ -263,6 +338,46 @@ fn smoke_test(input: &str) -> bool {
         .translate_instruction(input)
         .is_success()
 }
+```
+
+**Builder:**
+
+```rust
+let inputs = standard_instructions();
+let use_case = ShoppingBasketUseCase::new();
+
+ProbabilisticTest::new("ShoppingBasketUseCase", &inputs, |input| {
+    use_case.translate_instruction(input)
+})
+.samples(20)
+.threshold(0.70)
+.intent(TestIntent::Smoke)
+.run();
+```
+
+### Explore — comparing configurations
+
+Explore experiments compare multiple configurations side by side. Each
+configuration is a pre-built, immutable use case instance — the framework
+never mutates a use case during sampling. There is no macro equivalent;
+explore experiments always use the builder API.
+
+```rust
+let inputs = standard_instructions();
+
+let mut uc_low = ShoppingBasketUseCase::new();
+uc_low.set_temperature(0.1);
+
+let mut uc_high = ShoppingBasketUseCase::new();
+uc_high.set_temperature(0.5);
+
+ExploreExperiment::new("ShoppingBasketUseCase", 20, &inputs, |uc: &ShoppingBasketUseCase, input| {
+    uc.translate_instruction(input)
+})
+.config("temp=0.1", &uc_low)
+.config("temp=0.5", &uc_high)
+.experiment_id("model-comparison")
+.run();
 ```
 
 ## LLM configuration

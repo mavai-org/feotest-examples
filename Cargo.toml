@@ -27,6 +27,10 @@ path = "tests/experiments/shopping_basket_explore.rs"
 name = "payment_gateway_measure"
 path = "tests/experiments/payment_gateway_measure.rs"
 
+[[test]]
+name = "shopping_basket_measure_builder"
+path = "tests/experiments/shopping_basket_measure_builder.rs"
+
 [lints.rust]
 unsafe_code = "forbid"
 

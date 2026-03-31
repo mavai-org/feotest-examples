@@ -19,8 +19,7 @@ use usecases::PaymentGatewayUseCase;
     use_case = "PaymentGatewayUseCase",
     samples = 200,
     inputs = ["tok_visa_4242:1999"],
-    experiment_id = "baseline-v1",
-    spec_dir = "target/test-specs"
+    experiment_id = "baseline-v1"
 )]
 fn measure_payment_baseline(_input: &str) -> TrialOutcome {
     PaymentGatewayUseCase::new().charge_card("tok_visa_4242", 1999)

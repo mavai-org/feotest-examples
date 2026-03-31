@@ -22,8 +22,8 @@ use usecases::ShoppingBasketUseCase;
 /// At the default temperature (0.3) and the default mock, this typically
 /// yields a ~95% success rate, producing a derived threshold around 0.93.
 ///
-/// The spec is written to `target/test-specs/`. In a real project, you
-/// would write to `specs/` and commit the file.
+/// The spec is written to `tests/baselines/`. Review the output with `git diff`
+/// and commit when the baseline looks correct.
 #[measure_experiment(
     use_case = "ShoppingBasketUseCase",
     samples = 1000,
@@ -39,8 +39,7 @@ use usecases::ShoppingBasketUseCase;
         "Add a dozen eggs",
         "I'd like to remove all the vegetables"
     ],
-    experiment_id = "baseline-v1",
-    spec_dir = "target/test-specs"
+    experiment_id = "baseline-v1"
 )]
 fn measure_shopping_basket_baseline(input: &str) -> TrialOutcome {
     ShoppingBasketUseCase::new().translate_instruction(input)
