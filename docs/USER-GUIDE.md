@@ -376,8 +376,8 @@ let uc_high = ShoppingBasketUseCase::new()
 ExploreExperiment::new("ShoppingBasketUseCase", 20, &inputs, |uc: &ShoppingBasketUseCase, input| {
     uc.translate_instruction(input)
 })
-.config("temp=0.1", &uc_low)
-.config("temp=0.5", &uc_high)
+.config(&uc_low)
+.config(&uc_high)
 .experiment_id("model-comparison")
 .run();
 ```
