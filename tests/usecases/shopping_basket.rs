@@ -59,6 +59,15 @@ pub struct ShoppingBasketUseCase {
 }
 
 impl ShoppingBasketUseCase {
+    /// Returns the default system prompt used by this use case.
+    ///
+    /// Exposed for tests that call the LLM directly (e.g., conformance
+    /// tests that need the raw response string).
+    #[must_use]
+    pub fn default_system_prompt() -> &'static str {
+        DEFAULT_SYSTEM_PROMPT
+    }
+
     /// Creates a new shopping basket use case with default configuration.
     ///
     /// Uses the LLM resolved by [`ChatLlmProvider`] (mock by default).

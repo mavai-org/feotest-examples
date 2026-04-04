@@ -1,10 +1,10 @@
-//! Instance conformance tests for the shopping basket use case.
+//! Expected-output matching tests for the shopping basket use case.
 //!
-//! Demonstrates CT04 (instance conformance checking) by comparing LLM
+//! Demonstrates CT04 (expected-output matching) by comparing LLM
 //! responses against a golden dataset of known-correct expected outputs.
 //!
 //! Unlike postcondition-based tests (which check abstract properties like
-//! "is the response valid JSON?"), conformance tests check a stronger
+//! "is the response valid JSON?"), expected-output matching checks a stronger
 //! property: "does this response match the specific expected output for
 //! this specific input?"
 //!
@@ -20,6 +20,7 @@ use feotest::contract::json_matcher::JsonMatcher;
 use feotest::contract::{MatchResult, ServiceContract, UseCaseOutcome};
 use feotest::model::ContractViolation;
 
+use feotest_examples::llm::ChatLlmProvider;
 use serde::Deserialize;
 use usecases::ShoppingBasketUseCase;
 
@@ -37,24 +38,24 @@ fn load_golden_dataset() -> Vec<GoldenInput> {
 }
 
 // ---------------------------------------------------------------------------
-// Conformance with golden dataset using JsonMatcher
+// Expected-output matching with golden dataset using JsonMatcher
 // ---------------------------------------------------------------------------
 
-/// Demonstrates instance conformance checking against a golden dataset.
+/// Demonstrates expected-output matching against a golden dataset.
 ///
-/// Each golden input has a known expected JSON output. The test translates
-/// the instruction via the LLM and compares the actual JSON response against
-/// the expected output using semantic JSON comparison (property order and
-/// whitespace are ignored).
+/// Each golden input has a known expected JSON output. The test sends the
+/// instruction to the LLM, captures the raw response, evaluates it against
+/// postconditions, and then compares it against the expected output using
+/// semantic JSON comparison (property order and whitespace are ignored).
 ///
-/// With the mock LLM at temperature 0.0, the LLM produces structured output
-/// that we can evaluate for conformance. The test demonstrates the workflow
-/// rather than expecting 100% conformance — stochastic services will have
-/// conformance mismatches, and that is the point of measuring them.
+/// With the mock LLM at temperature 0.0, responses are deterministic and
+/// match rates are high. At higher temperatures, mismatches are expected —
+/// that is the point of measuring them.
 #[test]
 fn golden_dataset_json_conformance() {
     let golden = load_golden_dataset();
-    let use_case = ShoppingBasketUseCase::new().temperature(0.0);
+    let llm = ChatLlmProvider::resolve();
+    let system_prompt = ShoppingBasketUseCase::default_system_prompt();
     let matcher = JsonMatcher::new();
 
     let contract = ServiceContract::<String, String>::builder()
@@ -68,55 +69,40 @@ fn golden_dataset_json_conformance() {
         .build();
 
     let mut total = 0u32;
-    let mut conformance_matches = 0u32;
+    let mut expected_matches = 0u32;
 
     for entry in &golden {
-        let response_content = use_case
-            .translate_instruction(&entry.instruction)
-            .is_success();
+        // Check the LLM response against the contract's postconditions.
+        // The closure calls the LLM directly so the raw response string
+        // is captured as the outcome's response — available for matching
+        // against expected output in the next step.
+        let contract_outcome = UseCaseOutcome::evaluate(
+            &contract,
+            &entry.instruction,
+            || llm.chat(&system_prompt, &entry.instruction, "gpt-4o-mini", 0.0)
+                .content()
+                .to_string(),
+        );
 
-        // Even if the postcondition passed, check conformance separately
-        // to demonstrate the three-dimensional model
-        if response_content {
-            // Re-invoke to get the actual response string for conformance
-            // (In production code, the use case would return the response
-            // directly; here we demonstrate the conformance API.)
-            let outcome = UseCaseOutcome::evaluate(
-                &contract,
-                &entry.instruction,
-                || {
-                    // Get the raw LLM response content
-                    let uc = ShoppingBasketUseCase::new().temperature(0.0);
-                    let llm_response = uc
-                        .translate_instruction(&entry.instruction);
-                    if llm_response.is_success() {
-                        "valid".to_string() // placeholder
-                    } else {
-                        String::new()
-                    }
-                },
-            );
+        if contract_outcome.violation().is_some() {
+            continue;
+        }
 
-            let outcome = outcome.conforms_to(
-                &entry.expected,
-                |_response| {
-                    // In a real integration, the extractor would pull the
-                    // actual JSON content from the response. Here we
-                    // demonstrate the API shape.
-                    entry.expected.clone() // self-match for demonstration
-                },
-                &matcher,
-            );
+        // Match the actual LLM response against the golden expected output
+        let outcome = contract_outcome.conforms_to(
+            &entry.expected,
+            |response| response.clone(),
+            &matcher,
+        );
 
-            total += 1;
-            if outcome.matches_expected() {
-                conformance_matches += 1;
-            }
+        total += 1;
+        if outcome.matches_expected() {
+            expected_matches += 1;
         }
     }
 
     println!(
-        "Golden dataset conformance: {conformance_matches}/{total} matched ({} entries)",
+        "Golden dataset: {expected_matches}/{total} matched expected output ({} entries)",
         golden.len()
     );
     assert!(total > 0, "at least one golden input should produce a response");
@@ -224,13 +210,15 @@ fn custom_matcher_implementation() {
 }
 
 // ---------------------------------------------------------------------------
-// ConformanceResult on UseCaseOutcome
+// Expected-output matching on UseCaseOutcome
 // ---------------------------------------------------------------------------
 
-/// Demonstrates attaching a conformance check to a `UseCaseOutcome` and
-/// verifying the three-dimensional success model.
+/// Demonstrates attaching an expected-output match to a `UseCaseOutcome`
+/// and verifying that all three aspects — postconditions, duration, and
+/// expected-output matching — contribute independently to the overall
+/// success verdict.
 #[test]
-fn three_dimensional_outcome() {
+fn multi_aspect_outcome() {
     use std::time::Duration;
 
     let contract = ServiceContract::<String, String>::builder()
@@ -244,41 +232,62 @@ fn three_dimensional_outcome() {
         .ensure_duration_below(Duration::from_secs(5))
         .build();
 
-    // All three dimensions pass
-    let outcome = UseCaseOutcome::from_response(
+    // All three aspects pass
+    let contract_outcome = UseCaseOutcome::from_response(
         &contract,
         &"Add apples".to_string(),
         r#"{"actions":[{"context":"SHOP","name":"add","parameters":[]}]}"#.to_string(),
         Duration::from_millis(50),
     );
-    let outcome = outcome.conforms_to(
+
+    // Postconditions and duration have been checked.
+    // This outcome has not yet been matched against an expected value.
+    assert!(contract_outcome.violation().is_none());
+    assert!(contract_outcome.within_duration_limit());
+    assert!(contract_outcome.conformance_result().is_none());
+
+    // Add the third aspect: match against expected output
+    let outcome = contract_outcome.conforms_to(
         &r#"{"actions":[{"context":"SHOP","name":"add","parameters":[]}]}"#.to_string(),
         |r| r.clone(),
         &JsonMatcher::new(),
     );
 
+    // All three aspects now present and passing
     assert!(outcome.is_success());
     assert!(outcome.matches_expected());
     assert!(outcome.within_duration_limit());
     assert!(outcome.violation().is_none());
 
-    // Conformance fails, but postconditions and duration pass
-    let outcome = UseCaseOutcome::from_response(
+    // Match against a different expected value.
+    // The expected output deliberately differs from the response
+    // to demonstrate that the mismatch is detected.
+    let contract_outcome = UseCaseOutcome::from_response(
         &contract,
         &"Add apples".to_string(),
         r#"{"actions":[{"context":"SHOP","name":"add","parameters":[]}]}"#.to_string(),
         Duration::from_millis(50),
     );
-    let outcome = outcome.conforms_to(
+
+    // Postconditions and duration pass, but not yet matched against an expected value
+    assert!(contract_outcome.violation().is_none());
+    assert!(contract_outcome.within_duration_limit());
+    assert!(contract_outcome.conformance_result().is_none());
+
+    // Match against expected output (deliberately different)
+    let outcome = contract_outcome.conforms_to(
         &r#"{"actions":[{"context":"SHOP","name":"remove","parameters":[]}]}"#.to_string(),
         |r| r.clone(),
         &JsonMatcher::new(),
     );
 
-    assert!(!outcome.is_success()); // overall failure
-    assert!(!outcome.matches_expected()); // conformance failed
-    assert!(outcome.within_duration_limit()); // duration passed
-    assert!(outcome.violation().is_none()); // postconditions passed
+    // For demo purposes the following is_success() is false because matches_expected()
+    // is false: the actual response contains "add" but the expected value contains "remove".
+    // Postconditions and duration still pass independently.
+    assert!(!outcome.is_success());
+    assert!(!outcome.matches_expected());
+    assert!(outcome.within_duration_limit());
+    assert!(outcome.violation().is_none());
 
     let cr = outcome.conformance_result().unwrap();
     assert!(cr.match_result().is_mismatch());

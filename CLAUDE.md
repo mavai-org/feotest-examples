@@ -2,6 +2,13 @@
 
 Example project demonstrating the [feotest](../feotest) probabilistic testing framework.
 
+## Terminology
+
+The canonical glossary for the javai project family is at
+[`../javai-R/docs/GLOSSARY.md`](../javai-R/docs/GLOSSARY.md). All code
+comments, documentation, and discussions should use terms consistently with
+that glossary.
+
 ## Build and test
 
 ```bash
