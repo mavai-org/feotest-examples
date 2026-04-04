@@ -4,10 +4,16 @@
 //! more reliable structured action translations. This is the "look
 //! before you measure" phase — descriptive statistics only.
 //!
+//! Produces one YAML file per configuration under the output directory.
+//! These files are designed to be diffed against one another:
+//!
+//! ```text
+//! diff tests/explorations/low-temp.yaml tests/explorations/high-temp.yaml
+//! ```
+//!
 //! Run with:
 //! ```text
 //! cargo test --test explore_shopping_temperatures -- --nocapture
-//! cargo test --test explore_shopping_temperatures -- --nocapture > results.yaml
 //! ```
 
 #[path = "../usecases/mod.rs"]
@@ -24,11 +30,11 @@ fn explore_shopping_temperatures() {
 
     let uc_low = ShoppingBasketUseCase::new()
         .model("gpt-4o-mini")
-        .temperature(0.1);
+        .temperature(0.0);
 
     let uc_high = ShoppingBasketUseCase::new()
         .model("gpt-4o-mini")
-        .temperature(0.5);
+        .temperature(1.0);
 
     let result = ExploreExperiment::new(
         "ShoppingBasketUseCase",
@@ -38,7 +44,10 @@ fn explore_shopping_temperatures() {
     )
     .config_named("low-temp", &uc_low)
     .config_named("high-temp", &uc_high)
+    .output_dir("tests/explorations")
     .run();
 
-    print!("{}", result.to_yaml());
+    for path in result.spec_paths().unwrap_or_default() {
+        println!("{}", path.display());
+    }
 }
