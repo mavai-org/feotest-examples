@@ -16,6 +16,7 @@ use std::fmt;
 use std::time::Instant;
 
 use feotest::model::{ContractViolation, TrialOutcome};
+use feotest::usecase::{CovariateCategory, CovariateDeclaration, UseCase};
 
 use feotest_examples::llm::{ChatLlm, ChatLlmProvider};
 use feotest_examples::shopping::ShoppingActionValidator;
@@ -180,6 +181,29 @@ impl ShoppingBasketUseCase {
                 outcome
             }
         }
+    }
+}
+
+impl UseCase for ShoppingBasketUseCase {
+    fn id(&self) -> &str {
+        "shopping-basket"
+    }
+
+    fn description(&self) -> &str {
+        "Translates natural language shopping instructions into structured actions via an LLM"
+    }
+
+    fn warmup(&self) -> u32 {
+        3
+    }
+
+    fn covariates(&self) -> Vec<CovariateDeclaration> {
+        vec![
+            CovariateDeclaration::day_of_week(),
+            CovariateDeclaration::time_of_day(),
+            CovariateDeclaration::new("llm_model", CovariateCategory::ExternalDependency),
+            CovariateDeclaration::new("temperature", CovariateCategory::ExternalDependency),
+        ]
     }
 }
 

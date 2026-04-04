@@ -14,6 +14,7 @@ use std::fmt;
 use std::time::Instant;
 
 use feotest::model::{ContractViolation, TrialOutcome};
+use feotest::usecase::{CovariateDeclaration, UseCase};
 
 use feotest_examples::payment::{MockPaymentGateway, PaymentGateway};
 
@@ -25,8 +26,7 @@ use feotest_examples::payment::{MockPaymentGateway, PaymentGateway};
 ///
 /// # Contract postcondition
 ///
-/// The transaction must succeed (functional correctness only; latency
-/// testing is not yet supported in feotest).
+/// The transaction must succeed (functional correctness).
 pub struct PaymentGatewayUseCase {
     gateway: Box<dyn PaymentGateway>,
     region: String,
@@ -78,6 +78,20 @@ impl PaymentGatewayUseCase {
                 elapsed,
             )
         }
+    }
+}
+
+impl UseCase for PaymentGatewayUseCase {
+    fn id(&self) -> &str {
+        "payment-gateway"
+    }
+
+    fn description(&self) -> &str {
+        "Charges a payment card and verifies transaction success against an SLA"
+    }
+
+    fn covariates(&self) -> Vec<CovariateDeclaration> {
+        vec![CovariateDeclaration::region()]
     }
 }
 

@@ -1,0 +1,164 @@
+//! Covariate declarations: declaring what external conditions affect a use case.
+//!
+//! Covariates are environmental variables that the developer does not control
+//! but that influence outcomes: the day of the week, the deployment region,
+//! the LLM model behind an endpoint. A use case *declares* which covariates
+//! matter; it does not capture their current values (that is a separate
+//! concern).
+//!
+//! Declarations serve three purposes:
+//!
+//! 1. **Baseline partitioning** — a use case that performs differently on
+//!    weekdays versus weekends can have separate baselines for each condition.
+//! 2. **Variance explanation** — when a test fails, the declared covariates
+//!    provide context ("this ran on a Sunday in the EU region").
+//! 3. **Experiment design** — knowing which covariates matter helps decide
+//!    whether to measure under controlled conditions or across the full space.
+//!
+//! This test file demonstrates how to declare covariates on use cases and
+//! how the framework accesses them. It uses the two example use cases:
+//!
+//! - **Shopping basket** (LLM-backed): four covariates mixing built-in
+//!   temporal dimensions with custom external-dependency dimensions.
+//! - **Payment gateway** (SLA-driven): a single built-in infrastructure
+//!   covariate (region).
+//!
+//! Run with:
+//! ```text
+//! cargo test --test covariate_declaration_test -- --nocapture
+//! ```
+
+mod usecases;
+
+use feotest::usecase::{CovariateCategory, CovariateDeclaration, UseCase, validate_covariates};
+use usecases::{PaymentGatewayUseCase, ShoppingBasketUseCase};
+
+// ---------------------------------------------------------------------------
+// Accessing covariate declarations through the UseCase trait
+// ---------------------------------------------------------------------------
+
+/// The shopping basket declares four covariates: two built-in temporal
+/// dimensions and two custom dimensions for the LLM model and temperature.
+#[test]
+fn shopping_basket_declares_covariates() {
+    let use_case = ShoppingBasketUseCase::new();
+    let covariates = use_case.covariates();
+
+    assert_eq!(covariates.len(), 4);
+
+    // Built-in helpers produce standard keys and categories.
+    assert_eq!(covariates[0].key(), "day-of-week");
+    assert_eq!(covariates[0].category(), CovariateCategory::Temporal);
+
+    assert_eq!(covariates[1].key(), "time-of-day");
+    assert_eq!(covariates[1].category(), CovariateCategory::Temporal);
+
+    // Custom covariates use explicit keys and categories.
+    assert_eq!(covariates[2].key(), "llm_model");
+    assert_eq!(covariates[2].category(), CovariateCategory::ExternalDependency);
+
+    assert_eq!(covariates[3].key(), "temperature");
+    assert_eq!(covariates[3].category(), CovariateCategory::ExternalDependency);
+}
+
+/// The payment gateway declares a single covariate: the deployment region.
+/// Payment processing reliability varies by region (different acquirers,
+/// different infrastructure), but not meaningfully by day of week.
+#[test]
+fn payment_gateway_declares_region_covariate() {
+    let use_case = PaymentGatewayUseCase::new();
+    let covariates = use_case.covariates();
+
+    assert_eq!(covariates.len(), 1);
+    assert_eq!(covariates[0].key(), "region");
+    assert_eq!(covariates[0].category(), CovariateCategory::Infrastructure);
+}
+
+// ---------------------------------------------------------------------------
+// Validation: the framework rejects duplicate covariate keys
+// ---------------------------------------------------------------------------
+
+/// Each covariate key must be unique within a use case. The validation
+/// function catches duplicates early, before they cause subtle baseline
+/// matching errors downstream.
+#[test]
+fn covariate_declarations_have_unique_keys() {
+    let shopping = ShoppingBasketUseCase::new();
+    validate_covariates(&shopping.covariates());
+
+    let payment = PaymentGatewayUseCase::new();
+    validate_covariates(&payment.covariates());
+}
+
+// ---------------------------------------------------------------------------
+// Building covariate declarations: built-in helpers vs custom
+// ---------------------------------------------------------------------------
+
+/// Built-in helpers create declarations with standard keys that the
+/// framework recognises for automatic temporal and infrastructure
+/// partitioning. Using them avoids typos and ensures consistent naming
+/// across use cases.
+#[test]
+fn built_in_helpers_produce_standard_keys() {
+    let temporal = vec![
+        CovariateDeclaration::day_of_week(),
+        CovariateDeclaration::time_of_day(),
+    ];
+    for cov in &temporal {
+        assert_eq!(cov.category(), CovariateCategory::Temporal);
+    }
+
+    let infrastructure = vec![
+        CovariateDeclaration::region(),
+        CovariateDeclaration::timezone(),
+    ];
+    for cov in &infrastructure {
+        assert_eq!(cov.category(), CovariateCategory::Infrastructure);
+    }
+}
+
+/// Custom covariates use any key and one of the six taxonomy categories.
+#[test]
+fn custom_covariates_span_the_full_taxonomy() {
+    let covariates = vec![
+        CovariateDeclaration::new("feature-flag", CovariateCategory::Configuration),
+        CovariateDeclaration::new("season", CovariateCategory::Temporal),
+        CovariateDeclaration::new("cloud-provider", CovariateCategory::Infrastructure),
+        CovariateDeclaration::new("load-level", CovariateCategory::Operational),
+        CovariateDeclaration::new("upstream-api-version", CovariateCategory::ExternalDependency),
+        CovariateDeclaration::new("training-data-vintage", CovariateCategory::DataState),
+    ];
+
+    assert_eq!(covariates.len(), 6);
+    validate_covariates(&covariates);
+}
+
+// ---------------------------------------------------------------------------
+// Declarations are pure metadata
+// ---------------------------------------------------------------------------
+
+/// Covariate declarations do not affect use case behaviour. Two instances
+/// with different configurations produce the same declarations — the
+/// declarations describe what CAN vary, not what IS varying right now.
+#[test]
+fn declarations_are_independent_of_instance_state() {
+    let low_temp = ShoppingBasketUseCase::new().temperature(0.1);
+    let high_temp = ShoppingBasketUseCase::new().temperature(0.9);
+
+    assert_eq!(low_temp.covariates(), high_temp.covariates());
+}
+
+/// A use case that declares no covariates returns an empty vector.
+/// This is the default for the UseCase trait — only override when
+/// the use case genuinely has environmental sensitivities.
+#[test]
+fn default_is_no_covariates() {
+    struct Deterministic;
+    impl UseCase for Deterministic {
+        fn id(&self) -> &str {
+            "deterministic-service"
+        }
+    }
+
+    assert!(Deterministic.covariates().is_empty());
+}
