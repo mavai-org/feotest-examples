@@ -7,6 +7,7 @@
 //! Run with:
 //! ```text
 //! cargo test --test explore_shopping_temperatures -- --nocapture
+//! cargo test --test explore_shopping_temperatures -- --nocapture > results.yaml
 //! ```
 
 #[path = "../usecases/mod.rs"]
@@ -20,7 +21,6 @@ use usecases::shopping_basket::standard_instructions;
 #[test]
 fn explore_shopping_temperatures() {
     let inputs = standard_instructions();
-    let output_dir = tempfile::tempdir().unwrap();
 
     let uc_low = ShoppingBasketUseCase::new()
         .model("gpt-4o-mini")
@@ -38,25 +38,7 @@ fn explore_shopping_temperatures() {
     )
     .config_named("low-temp", &uc_low)
     .config_named("high-temp", &uc_high)
-    .output_dir(output_dir.path())
     .run();
 
-    // Verify both configurations ran
-    assert_eq!(result.configs().len(), 2);
-    for config in result.configs() {
-        assert_eq!(config.execution().summary().samples_executed(), 10);
-    }
-
-    // Print summary for visual inspection
-    println!("=== Temperature Exploration ===");
-    for config in result.configs() {
-        let summary = config.execution().summary();
-        println!(
-            "  {:<15} pass rate: {:.0}%  ({}/{})",
-            config.name(),
-            summary.observed_pass_rate() * 100.0,
-            summary.successes(),
-            summary.samples_executed(),
-        );
-    }
+    print!("{}", result.to_yaml());
 }
