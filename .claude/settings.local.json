@@ -12,7 +12,10 @@
       "Bash(do echo:*)",
       "Bash(done)",
       "Bash(do cargo:*)",
-      "Bash(cargo clean:*)"
+      "Bash(cargo clean:*)",
+      "Bash(cargo check:*)",
+      "Read(//Users/mikemannion/workspace/punitexamples/**)",
+      "Read(//Users/mikemannion/workspace/**)"
     ]
   }
 }

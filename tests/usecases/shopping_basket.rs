@@ -146,18 +146,39 @@ impl ShoppingBasketUseCase {
 
         let elapsed = start.elapsed();
 
+        let content = response.content().to_string();
+
         // Postcondition 1: Response has content
-        if response.content().trim().is_empty() {
+        if content.trim().is_empty() {
             return TrialOutcome::failure(
                 ContractViolation::new("content", "empty response from LLM"),
                 elapsed,
-            );
+            )
+            .content(&content)
+            .postcondition("has content", "failed");
         }
 
         // Postconditions 2 & 3: Valid structure and valid actions
         match ShoppingActionValidator::validate(&response) {
-            Ok(_actions) => TrialOutcome::success(elapsed),
-            Err(violation) => TrialOutcome::failure(violation, elapsed),
+            Ok(_actions) => TrialOutcome::success(elapsed)
+                .content(&content)
+                .postcondition("has content", "passed")
+                .postcondition("valid structure", "passed")
+                .postcondition("valid actions", "passed"),
+            Err(violation) => {
+                let check = violation.check().to_string();
+                let mut outcome =
+                    TrialOutcome::failure(violation, elapsed).content(&content);
+
+                for &name in &["has content", "valid structure", "valid actions"] {
+                    if name == check {
+                        outcome = outcome.postcondition(name, "failed");
+                        break;
+                    }
+                    outcome = outcome.postcondition(name, "passed");
+                }
+                outcome
+            }
         }
     }
 }
