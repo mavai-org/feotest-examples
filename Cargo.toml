@@ -29,14 +29,6 @@ name = "payment_gateway_measure"
 path = "tests/experiments/payment_gateway_measure.rs"
 
 [[test]]
-name = "shopping_basket_measure_builder"
-path = "tests/experiments/shopping_basket_measure_builder.rs"
-
-[[test]]
-name = "shopping_basket_measure_covariates"
-path = "tests/experiments/shopping_basket_measure_covariates.rs"
-
-[[test]]
 name = "explore_shopping_temperatures"
 path = "tests/experiments/explore_shopping_temperatures.rs"
 

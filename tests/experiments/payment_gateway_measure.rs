@@ -12,15 +12,18 @@
 #[path = "../usecases/mod.rs"]
 mod usecases;
 
-use feotest::measure_experiment;
+use feotest::experiment::MeasureExperiment;
 use usecases::PaymentGatewayUseCase;
 
-#[measure_experiment(
-    use_case = "PaymentGatewayUseCase",
-    samples = 200,
-    inputs = ["tok_visa_4242:1999"],
-    experiment_id = "baseline-v1"
-)]
-fn measure_payment_baseline(_input: &str) -> TrialOutcome {
-    PaymentGatewayUseCase::new().charge_card("tok_visa_4242", 1999)
+/// Establishes a baseline for the payment gateway use case.
+#[test]
+fn measure_payment_baseline() {
+    let inputs = vec!["tok_visa_4242:1999".to_string()];
+    let uc = PaymentGatewayUseCase::new();
+
+    MeasureExperiment::new(&uc, 200, &inputs, |_input| {
+        uc.charge_card("tok_visa_4242", 1999)
+    })
+    .experiment_id("baseline-v1")
+    .run();
 }

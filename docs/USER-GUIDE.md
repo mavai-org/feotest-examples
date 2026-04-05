@@ -146,7 +146,7 @@ Re-running a measure experiment overwrites the existing spec. This is
 intentional: when the service or its configuration changes, you re-measure,
 review the new baseline, and commit the update.
 
-The measurement is declared with the `#[measure_experiment]` macro — see the
+The measurement is declared with the `MeasureExperiment` builder — see the
 _Measure_ section under _Understanding the test types_ for the declaration
 pattern.
 
@@ -172,17 +172,16 @@ determine the verdict.
 
 ## Understanding the test types
 
-feotest provides two ways to declare experiments and tests:
+feotest provides two declaration styles:
 
-- **Macros** (`#[probabilistic_test]`, `#[measure_experiment]`) — compact,
-  declarative, suitable when inputs are static.
-- **Builder API** (`ProbabilisticTest`, `MeasureExperiment`) — required when
-  inputs are dynamic, shared, or generated at runtime.
+- **Macro** (`#[probabilistic_test]`) — compact, declarative annotation for
+  probabilistic tests. Suitable when inputs are static.
+- **Builder API** (`MeasureExperiment`, `ExploreExperiment`,
+  `ProbabilisticTest`) — the standard API for all experiment types and for
+  tests with dynamic inputs.
 
-Both are shown side by side below. The macro expands to builder calls
-internally — the builder is not a separate system. For each scenario, this
-project includes both a macro test and a builder test (see `*_test.rs` and
-`*_test_builder.rs` files).
+Measure and explore experiments use the builder exclusively. Probabilistic
+tests can use either the macro or the builder — both are shown below.
 
 ### The parameter triangle
 
@@ -243,23 +242,8 @@ ProbabilisticTest::new("PaymentGatewayUseCase", &inputs, |_input| {
 ### Measure — establishing a baseline
 
 Before running spec-driven tests, you need a baseline. A measure experiment
-runs many trials, computes statistics, and writes a spec file.
-
-**Macro:**
-
-```rust
-#[measure_experiment(
-    use_case = "ShoppingBasketUseCase",
-    samples = 1000,
-    inputs = ["Add 2 apples", "Remove the milk", "Clear the basket"],
-    experiment_id = "baseline-v1"
-)]
-fn measure_shopping_basket_baseline(input: &str) -> TrialOutcome {
-    ShoppingBasketUseCase::new().translate_instruction(input)
-}
-```
-
-**Builder:**
+runs many trials, computes statistics, and writes a spec file. Measure
+experiments always use the builder API.
 
 ```rust
 let inputs = standard_instructions();

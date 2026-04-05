@@ -1,9 +1,8 @@
 //! Measure experiment for the shopping basket use case.
 //!
-//! Establishes an empirical baseline by running a large number of trials
-//! and recording the observed success rate. The resulting spec file
-//! captures the Wilson lower bound as the derived minimum pass rate,
-//! which subsequent probabilistic tests use as their threshold.
+//! Establishes an empirical baseline by running a large number of trials.
+//! The use case provides identity and covariate information; the baseline
+//! spec is written to `tests/baselines/` by default.
 //!
 //! Run with:
 //! ```text
@@ -13,34 +12,22 @@
 #[path = "../usecases/mod.rs"]
 mod usecases;
 
-use feotest::measure_experiment;
+use feotest::experiment::MeasureExperiment;
 use usecases::ShoppingBasketUseCase;
+use usecases::shopping_basket::standard_instructions;
 
 /// Establishes a baseline for the shopping basket use case.
 ///
-/// Runs 1000 trials cycling through 10 representative instructions.
-/// At the default temperature (0.3) and the default mock, this typically
-/// yields a ~95% success rate, producing a derived threshold around 0.93.
-///
-/// The spec is written to `tests/baselines/`. Review the output with `git diff`
-/// and commit when the baseline looks correct.
-#[measure_experiment(
-    use_case = "ShoppingBasketUseCase",
-    samples = 1000,
-    inputs = [
-        "Add 2 apples",
-        "Remove the milk",
-        "Add 1 loaf of bread",
-        "Add 3 oranges and 2 bananas",
-        "Add 5 tomatoes and remove the cheese",
-        "Clear the basket",
-        "Clear everything",
-        "Remove 2 eggs from the basket",
-        "Add a dozen eggs",
-        "I'd like to remove all the vegetables"
-    ],
-    experiment_id = "baseline-v1"
-)]
-fn measure_shopping_basket_baseline(input: &str) -> TrialOutcome {
-    ShoppingBasketUseCase::new().translate_instruction(input)
+/// Runs 1000 trials cycling through representative instructions.
+/// The spec is written to `tests/baselines/` by default.
+#[test]
+fn measure_shopping_basket_baseline() {
+    let inputs = standard_instructions();
+    let uc = ShoppingBasketUseCase::new();
+
+    MeasureExperiment::new(&uc, 1000, &inputs, |input| {
+        uc.translate_instruction(input)
+    })
+    .experiment_id("baseline-v1")
+    .run();
 }
