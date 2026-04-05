@@ -34,6 +34,58 @@ use feotest::usecase::{CovariateCategory, CovariateDeclaration, UseCase, validat
 use usecases::{PaymentGatewayUseCase, ShoppingBasketUseCase};
 
 // ---------------------------------------------------------------------------
+// Covariate resolution: declared covariates must be resolvable
+// ---------------------------------------------------------------------------
+
+/// Every declared covariate must have a corresponding resolved value.
+/// The shopping basket resolves all four of its declared covariates.
+#[test]
+fn shopping_basket_resolves_all_declared_covariates() {
+    let use_case = ShoppingBasketUseCase::new();
+    let declarations = use_case.covariates();
+    let profile = use_case.resolve_covariates();
+    let entries = profile.entries();
+
+    assert_eq!(
+        entries.len(),
+        declarations.len(),
+        "every declared covariate must have a resolved value"
+    );
+
+    for (decl, (key, _value)) in declarations.iter().zip(entries.iter()) {
+        assert_eq!(decl.key(), key);
+    }
+}
+
+/// The payment gateway resolves its single declared covariate (region).
+#[test]
+fn payment_gateway_resolves_region() {
+    let use_case = PaymentGatewayUseCase::new();
+    let profile = use_case.resolve_covariates();
+    let entries = profile.entries();
+
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].0, "region");
+    assert_eq!(entries[0].1, "US");
+}
+
+/// Resolved values reflect instance state. Two instances configured
+/// differently produce the same declarations but different profiles.
+#[test]
+fn resolved_values_reflect_instance_configuration() {
+    let us = PaymentGatewayUseCase::new().region("US");
+    let eu = PaymentGatewayUseCase::new().region("EU");
+
+    // Same declarations...
+    assert_eq!(us.covariates(), eu.covariates());
+
+    // ...different resolved values.
+    let us_entries = us.resolve_covariates();
+    let eu_entries = eu.resolve_covariates();
+    assert_ne!(us_entries.entries(), eu_entries.entries());
+}
+
+// ---------------------------------------------------------------------------
 // Accessing covariate declarations through the UseCase trait
 // ---------------------------------------------------------------------------
 

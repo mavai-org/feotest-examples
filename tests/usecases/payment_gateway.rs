@@ -14,6 +14,7 @@ use std::fmt;
 use std::time::Instant;
 
 use feotest::model::{ContractViolation, TrialOutcome};
+use feotest::spec::namer::CovariateProfile;
 use feotest::usecase::{CovariateDeclaration, UseCase};
 
 use feotest_examples::payment::{MockPaymentGateway, PaymentGateway};
@@ -92,6 +93,12 @@ impl UseCase for PaymentGatewayUseCase {
 
     fn covariates(&self) -> Vec<CovariateDeclaration> {
         vec![CovariateDeclaration::region()]
+    }
+
+    fn resolve_covariates(&self) -> CovariateProfile {
+        CovariateProfile::builder()
+            .put("region", &self.region)
+            .build()
     }
 }
 
