@@ -16,6 +16,7 @@ use std::fmt;
 use std::time::Instant;
 
 use feotest::model::{ContractViolation, TrialOutcome};
+use feotest::spec::namer::CovariateProfile;
 use feotest::usecase::{CovariateCategory, CovariateDeclaration, UseCase};
 
 use feotest_examples::llm::{ChatLlm, ChatLlmProvider};
@@ -204,6 +205,15 @@ impl UseCase for ShoppingBasketUseCase {
             CovariateDeclaration::new("llm_model", CovariateCategory::ExternalDependency),
             CovariateDeclaration::new("temperature", CovariateCategory::ExternalDependency),
         ]
+    }
+
+    fn resolve_covariates(&self) -> CovariateProfile {
+        CovariateProfile::builder()
+            .put("day-of-week", CovariateProfile::resolve_day_of_week())
+            .put("time-of-day", CovariateProfile::resolve_time_of_day())
+            .put("llm_model", &self.model)
+            .put("temperature", self.temperature.to_string())
+            .build()
     }
 }
 
