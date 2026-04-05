@@ -41,10 +41,9 @@ fn explore_model_configurations() {
         .temperature(0.5);
 
     let result =
-        ExploreExperiment::new("ShoppingBasketUseCase", 20, &inputs, |uc: &ShoppingBasketUseCase, input| {
+        ExploreExperiment::new(&uc_low, 20, &inputs, |uc: &ShoppingBasketUseCase, input| {
             uc.translate_instruction(input)
         })
-        .config(&uc_low)
         .config(&uc_high)
         .experiment_id("model-comparison")
         .run();

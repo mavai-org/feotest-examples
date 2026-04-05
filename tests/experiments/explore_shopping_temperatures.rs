@@ -37,12 +37,11 @@ fn explore_shopping_temperatures() {
         .temperature(1.0);
 
     let result = ExploreExperiment::new(
-        "ShoppingBasketUseCase",
+        &uc_low,
         10,
         &inputs,
         ShoppingBasketUseCase::translate_instruction,
     )
-    .config_named("low-temp", &uc_low)
     .config_named("high-temp", &uc_high)
     .output_dir("tests/explorations")
     .run();

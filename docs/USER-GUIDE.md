@@ -122,13 +122,15 @@ cargo test --test shopping_basket_measure -- --nocapture
 ```
 
 The measurement runs 1000 samples, computes a Wilson score confidence interval
-for the true success probability, and writes a spec file to `tests/baselines/`. The spec captures the observed
-success rate, the Wilson lower bound (used as the derived minimum pass rate),
-and execution metadata:
+for the true success probability, and writes a spec file to `tests/baselines/`. The filename encodes the use case
+identity and covariate values so that different environmental conditions
+produce distinct baselines. The spec captures the observed success rate,
+the Wilson lower bound (used as the derived minimum pass rate), resolved
+covariate values, and execution metadata:
 
 ```
 tests/baselines/
-└── ShoppingBasketUseCase.yaml
+└── shopping-basket-d833-47e1-5ba7-5bad-a769.yaml
 ```
 
 The spec file is intended to be committed to the repository. Probabilistic
@@ -261,17 +263,19 @@ fn measure_shopping_basket_baseline(input: &str) -> TrialOutcome {
 
 ```rust
 let inputs = standard_instructions();
-let use_case = ShoppingBasketUseCase::new();
+let uc = ShoppingBasketUseCase::new();
 
-MeasureExperiment::new("ShoppingBasketUseCase", 1000, &inputs, |input| {
-    use_case.translate_instruction(input)
+MeasureExperiment::new(&uc, 1000, &inputs, |input| {
+    uc.translate_instruction(input)
 })
 .experiment_id("baseline-v1")
 .run();
 ```
 
-The `inputs` are cycled round-robin across the requested sample count. The
-spec is written to `tests/baselines/` by default.
+The use case provides the ID, covariate declarations, and resolved
+covariate values — all captured automatically in the baseline spec.
+The `inputs` are cycled round-robin across the requested sample count.
+The spec is written to `tests/baselines/` by default.
 
 ### Sample-size-first with spec
 
@@ -292,7 +296,7 @@ The recommended workflow:
 #[probabilistic_test(
     samples = 500,
     confidence = 0.95,
-    spec = "tests/baselines/ShoppingBasketUseCase.yaml",
+    spec = "tests/baselines/ShoppingBasketUseCase-49a9.yaml",
     threshold_origin = "empirical"
 )]
 fn spec_driven_sample_size_first(input: &str) -> bool {
@@ -367,20 +371,26 @@ let inputs = standard_instructions();
 
 let uc_low = ShoppingBasketUseCase::new()
     .model("gpt-4o-mini")
-    .temperature(0.1);
+    .temperature(0.0);
 
 let uc_high = ShoppingBasketUseCase::new()
     .model("gpt-4o-mini")
-    .temperature(0.5);
+    .temperature(1.0);
 
-ExploreExperiment::new("ShoppingBasketUseCase", 20, &inputs, |uc: &ShoppingBasketUseCase, input| {
-    uc.translate_instruction(input)
-})
-.config(&uc_low)
-.config(&uc_high)
-.experiment_id("model-comparison")
-.run();
+let result = ExploreExperiment::new(&uc_low, 10, &inputs, ShoppingBasketUseCase::translate_instruction)
+    .config_named("high-temp", &uc_high)
+    .output_dir("tests/explorations")
+    .run();
+
+for path in result.spec_paths().unwrap_or_default() {
+    println!("{}", path.display());
+}
 ```
+
+The first use case passed to `new()` is both the first configuration and
+the source of the use case ID (via the `UseCase` trait). Each
+configuration produces a separate YAML file under the output directory,
+designed to be diffed against one another.
 
 ## LLM configuration
 

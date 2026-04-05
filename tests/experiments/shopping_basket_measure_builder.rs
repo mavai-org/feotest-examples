@@ -1,8 +1,8 @@
 //! Builder variant of the shopping basket measure experiment.
 //!
-//! Functionally equivalent to the macro version in
-//! `shopping_basket_measure.rs`. Demonstrates the builder API for cases
-//! where inputs are dynamic or shared across experiments.
+//! Demonstrates the builder API for establishing a baseline. The use case
+//! provides identity and covariate information; the baseline spec is
+//! written to `tests/baselines/` by default.
 //!
 //! Run with:
 //! ```text
@@ -23,10 +23,10 @@ use usecases::shopping_basket::standard_instructions;
 #[test]
 fn measure_shopping_basket_baseline() {
     let inputs = standard_instructions();
-    let use_case = ShoppingBasketUseCase::new();
+    let uc = ShoppingBasketUseCase::new();
 
-    MeasureExperiment::new("ShoppingBasketUseCase", 1000, &inputs, |input| {
-        use_case.translate_instruction(input)
+    MeasureExperiment::new(&uc, 1000, &inputs, |input| {
+        uc.translate_instruction(input)
     })
     .experiment_id("baseline-v1")
     .run();

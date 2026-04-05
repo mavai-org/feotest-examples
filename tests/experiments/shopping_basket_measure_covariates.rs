@@ -19,7 +19,7 @@ fn baseline_encodes_covariates() {
     let inputs = standard_instructions();
     let uc = ShoppingBasketUseCase::new();
 
-    let result = MeasureExperiment::for_use_case(&uc, 100, &inputs, |input| {
+    let result = MeasureExperiment::new(&uc, 100, &inputs, |input| {
         uc.translate_instruction(input)
     })
     .run();
