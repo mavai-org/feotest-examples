@@ -18,8 +18,8 @@ mod usecases;
 
 use feotest::model::ThresholdOrigin;
 use feotest::ptest::ProbabilisticTest;
-use usecases::ShoppingBasketUseCase;
 use usecases::shopping_basket::standard_instructions;
+use usecases::ShoppingBasketUseCase;
 
 /// The framework selects the temperature=0.3 baseline when the use case
 /// is configured with temperature=0.3.
