@@ -1,6 +1,6 @@
-//! Payment gateway use case: SLA-driven reliability testing.
+//! Payment gateway service contract: SLA-driven reliability testing.
 //!
-//! This use case wraps a payment processing service and tests it against
+//! This service contract wraps a payment processing service and tests it against
 //! an SLA requirement. Unlike the shopping basket (where the threshold
 //! is derived empirically), the payment gateway has an explicit
 //! contractual threshold — making it a natural demonstration of
@@ -15,26 +15,26 @@ use std::time::Instant;
 
 use feotest::model::{ContractViolation, TrialOutcome};
 use feotest::spec::namer::CovariateProfile;
-use feotest::usecase::{CovariateDeclaration, UseCase};
+use feotest::service_contract::{CovariateDeclaration, ServiceContract};
 
 use feotest_examples::payment::{MockPaymentGateway, PaymentGateway};
 
-/// A use case for charging a payment card and verifying the transaction.
+/// A service contract for charging a payment card and verifying the transaction.
 ///
-/// All configuration is set at construction time. The use case is immutable
+/// All configuration is set at construction time. The service contract is immutable
 /// after construction — this preserves the i.i.d. assumption required for
 /// valid statistical inference.
 ///
 /// # Contract postcondition
 ///
 /// The transaction must succeed (functional correctness).
-pub struct PaymentGatewayUseCase {
+pub struct PaymentGatewayServiceContract {
     gateway: Box<dyn PaymentGateway>,
     region: String,
 }
 
-impl PaymentGatewayUseCase {
-    /// Creates a new payment gateway use case with the default mock.
+impl PaymentGatewayServiceContract {
+    /// Creates a new payment gateway service contract with the default mock.
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -43,7 +43,7 @@ impl PaymentGatewayUseCase {
         }
     }
 
-    /// Creates a use case with a specific gateway implementation.
+    /// Creates a service contract with a specific gateway implementation.
     #[must_use]
     pub fn gateway(gateway: Box<dyn PaymentGateway>) -> Self {
         Self {
@@ -82,7 +82,7 @@ impl PaymentGatewayUseCase {
     }
 }
 
-impl UseCase for PaymentGatewayUseCase {
+impl ServiceContract for PaymentGatewayServiceContract {
     fn id(&self) -> &str {
         "payment-gateway"
     }
@@ -102,13 +102,13 @@ impl UseCase for PaymentGatewayUseCase {
     }
 }
 
-impl fmt::Display for PaymentGatewayUseCase {
+impl fmt::Display for PaymentGatewayServiceContract {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PaymentGateway (region={})", self.region)
     }
 }
 
-impl Default for PaymentGatewayUseCase {
+impl Default for PaymentGatewayServiceContract {
     fn default() -> Self {
         Self::new()
     }

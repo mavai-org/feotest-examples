@@ -9,12 +9,12 @@
 //! cargo test --test shopping_basket_test_builder -- --nocapture
 //! ```
 
-mod usecases;
+mod service_contracts;
 
 use feotest::model::{TestIntent, ThresholdOrigin};
 use feotest::ptest::ProbabilisticTest;
-use usecases::ShoppingBasketUseCase;
-use usecases::shopping_basket::standard_instructions;
+use service_contracts::ShoppingBasketServiceContract;
+use service_contracts::shopping_basket::standard_instructions;
 
 /// Threshold-first test with the builder API.
 ///
@@ -24,10 +24,10 @@ use usecases::shopping_basket::standard_instructions;
 #[test]
 fn threshold_first_verification() {
     let inputs = standard_instructions();
-    let use_case = ShoppingBasketUseCase::new();
+    let service_contract = ShoppingBasketServiceContract::new();
 
-    ProbabilisticTest::new("ShoppingBasketUseCase", &inputs, |input| {
-        use_case.translate_instruction(input)
+    ProbabilisticTest::new("ShoppingBasketServiceContract", &inputs, |input| {
+        service_contract.translate_instruction(input)
     })
     .samples(100)
     .threshold(0.80)
@@ -41,10 +41,10 @@ fn threshold_first_verification() {
 #[test]
 fn smoke_test() {
     let inputs = standard_instructions();
-    let use_case = ShoppingBasketUseCase::new();
+    let service_contract = ShoppingBasketServiceContract::new();
 
-    ProbabilisticTest::new("ShoppingBasketUseCase", &inputs, |input| {
-        use_case.translate_instruction(input)
+    ProbabilisticTest::new("ShoppingBasketServiceContract", &inputs, |input| {
+        service_contract.translate_instruction(input)
     })
     .samples(20)
     .threshold(0.70)
@@ -55,15 +55,15 @@ fn smoke_test() {
 /// Spec-driven test with the builder API.
 ///
 /// Equivalent to the `spec_driven_sample_size_first` macro test.
-/// The builder resolves the baseline automatically from the use case
+/// The builder resolves the baseline automatically from the service contract
 /// ID — no explicit path needed.
 #[test]
 fn spec_driven_sample_size_first() {
     let inputs = standard_instructions();
-    let use_case = ShoppingBasketUseCase::new();
+    let service_contract = ShoppingBasketServiceContract::new();
 
-    ProbabilisticTest::new("ShoppingBasketUseCase", &inputs, |input| {
-        use_case.translate_instruction(input)
+    ProbabilisticTest::new("ShoppingBasketServiceContract", &inputs, |input| {
+        service_contract.translate_instruction(input)
     })
     .samples(500)
     .confidence(0.95)

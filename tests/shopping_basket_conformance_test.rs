@@ -1,4 +1,4 @@
-//! Expected-output matching tests for the shopping basket use case.
+//! Expected-output matching tests for the shopping basket service contract.
 //!
 //! Demonstrates CT04 (expected-output matching) by comparing LLM
 //! responses against a golden dataset of known-correct expected outputs.
@@ -13,16 +13,16 @@
 //! cargo test --test shopping_basket_conformance_test -- --nocapture
 //! ```
 
-mod usecases;
+mod service_contracts;
 
 use feotest::contract::conformance::{StringMatcher, VerificationMatcher};
 use feotest::contract::json_matcher::JsonMatcher;
-use feotest::contract::{MatchResult, ServiceContract, UseCaseOutcome};
+use feotest::contract::{MatchResult, ServiceContract, ServiceContractOutcome};
 use feotest::model::ContractViolation;
 
 use feotest_examples::llm::ChatLlmProvider;
 use serde::Deserialize;
-use usecases::ShoppingBasketUseCase;
+use service_contracts::ShoppingBasketServiceContract;
 
 /// A golden dataset entry: an instruction paired with its expected output.
 #[derive(Debug, Clone, Deserialize)]
@@ -55,7 +55,7 @@ fn load_golden_dataset() -> Vec<GoldenInput> {
 fn golden_dataset_json_conformance() {
     let golden = load_golden_dataset();
     let llm = ChatLlmProvider::resolve();
-    let system_prompt = ShoppingBasketUseCase::default_system_prompt();
+    let system_prompt = ShoppingBasketServiceContract::default_system_prompt();
     let matcher = JsonMatcher::new();
 
     let contract = ServiceContract::<String, String>::builder()
@@ -76,7 +76,7 @@ fn golden_dataset_json_conformance() {
         // The closure calls the LLM directly so the raw response string
         // is captured as the outcome's response — available for matching
         // against expected output in the next step.
-        let contract_outcome = UseCaseOutcome::evaluate(
+        let contract_outcome = ServiceContractOutcome::evaluate(
             &contract,
             &entry.instruction,
             || llm.chat(&system_prompt, &entry.instruction, "gpt-4o-mini", 0.0)
@@ -210,10 +210,10 @@ fn custom_matcher_implementation() {
 }
 
 // ---------------------------------------------------------------------------
-// Expected-output matching on UseCaseOutcome
+// Expected-output matching on ServiceContractOutcome
 // ---------------------------------------------------------------------------
 
-/// Demonstrates attaching an expected-output match to a `UseCaseOutcome`
+/// Demonstrates attaching an expected-output match to a `ServiceContractOutcome`
 /// and verifying that all three aspects — postconditions, duration, and
 /// expected-output matching — contribute independently to the overall
 /// success verdict.
@@ -233,7 +233,7 @@ fn multi_aspect_outcome() {
         .build();
 
     // All three aspects pass
-    let contract_outcome = UseCaseOutcome::from_response(
+    let contract_outcome = ServiceContractOutcome::from_response(
         &contract,
         &"Add apples".to_string(),
         r#"{"actions":[{"context":"SHOP","name":"add","parameters":[]}]}"#.to_string(),
@@ -262,7 +262,7 @@ fn multi_aspect_outcome() {
     // Match against a different expected value.
     // The expected output deliberately differs from the response
     // to demonstrate that the mismatch is detected.
-    let contract_outcome = UseCaseOutcome::from_response(
+    let contract_outcome = ServiceContractOutcome::from_response(
         &contract,
         &"Add apples".to_string(),
         r#"{"actions":[{"context":"SHOP","name":"add","parameters":[]}]}"#.to_string(),

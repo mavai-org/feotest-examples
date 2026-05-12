@@ -16,23 +16,23 @@
 //! cargo test --test explore_shopping_temperatures -- --nocapture
 //! ```
 
-#[path = "../usecases/mod.rs"]
-mod usecases;
+#[path = "../service_contracts/mod.rs"]
+mod service_contracts;
 
 use feotest::experiment::ExploreExperiment;
-use usecases::ShoppingBasketUseCase;
-use usecases::shopping_basket::standard_instructions;
+use service_contracts::ShoppingBasketServiceContract;
+use service_contracts::shopping_basket::standard_instructions;
 
 /// Compares low vs high temperature for shopping basket translation.
 #[test]
 fn explore_shopping_temperatures() {
     let inputs = standard_instructions();
 
-    let uc_low = ShoppingBasketUseCase::new()
+    let uc_low = ShoppingBasketServiceContract::new()
         .model("gpt-4o-mini")
         .temperature(0.0);
 
-    let uc_high = ShoppingBasketUseCase::new()
+    let uc_high = ShoppingBasketServiceContract::new()
         .model("gpt-4o-mini")
         .temperature(1.0);
 
@@ -40,7 +40,7 @@ fn explore_shopping_temperatures() {
         &uc_low,
         10,
         &inputs,
-        ShoppingBasketUseCase::translate_instruction,
+        ShoppingBasketServiceContract::translate_instruction,
     )
     .config_named("high-temp", &uc_high)
     .output_dir("tests/explorations")

@@ -1,6 +1,6 @@
-//! Shopping basket use case: translating natural language to structured actions.
+//! Shopping basket service contract: translating natural language to structured actions.
 //!
-//! This use case wraps an LLM call that translates instructions like
+//! This service contract wraps an LLM call that translates instructions like
 //! "Add 2 apples" into structured JSON actions. It demonstrates the full
 //! feotest workflow:
 //!
@@ -8,7 +8,7 @@
 //! 2. Execute the service and evaluate the contract
 //! 3. Return a `TrialOutcome` for statistical analysis
 //!
-//! The use case is inherently stochastic: the same instruction may produce
+//! The service contract is inherently stochastic: the same instruction may produce
 //! different (and sometimes invalid) responses across invocations, depending
 //! on the model and temperature.
 
@@ -17,7 +17,7 @@ use std::time::Instant;
 
 use feotest::model::{ContractViolation, TrialOutcome};
 use feotest::spec::namer::CovariateProfile;
-use feotest::usecase::{CovariateCategory, CovariateDeclaration, UseCase};
+use feotest::service_contract::{CovariateCategory, CovariateDeclaration, ServiceContract};
 
 use feotest_examples::llm::{ChatLlm, ChatLlmProvider};
 use feotest_examples::shopping::ShoppingActionValidator;
@@ -34,7 +34,7 @@ For add/remove actions, include \"item\" and \"quantity\" parameters.\n\
 For clear actions, use an empty parameters array.\n\n\
 Respond with JSON only. No prose, no markdown, no explanation.";
 
-/// A use case for translating natural language shopping instructions into
+/// A service contract for translating natural language shopping instructions into
 /// structured actions via an LLM.
 ///
 /// # Contract postconditions
@@ -47,21 +47,21 @@ Respond with JSON only. No prose, no markdown, no explanation.";
 ///
 /// # Configuration
 ///
-/// All configuration is set at construction time. The use case is immutable
+/// All configuration is set at construction time. The service contract is immutable
 /// after construction — this is a deliberate design choice that preserves
 /// the i.i.d. assumption required for valid statistical inference.
 ///
 /// - `model`: the LLM model identifier (default: `"gpt-4o-mini"`)
 /// - `temperature`: controls response variability (default: `0.3`)
-pub struct ShoppingBasketUseCase {
+pub struct ShoppingBasketServiceContract {
     llm: Box<dyn ChatLlm>,
     model: String,
     temperature: f64,
     system_prompt: String,
 }
 
-impl ShoppingBasketUseCase {
-    /// Returns the default system prompt used by this use case.
+impl ShoppingBasketServiceContract {
+    /// Returns the default system prompt used by this service contract.
     ///
     /// Exposed for tests that call the LLM directly (e.g., conformance
     /// tests that need the raw response string).
@@ -70,7 +70,7 @@ impl ShoppingBasketUseCase {
         DEFAULT_SYSTEM_PROMPT
     }
 
-    /// Creates a new shopping basket use case with default configuration.
+    /// Creates a new shopping basket service contract with default configuration.
     ///
     /// Uses the LLM resolved by [`ChatLlmProvider`] (mock by default).
     #[must_use]
@@ -83,7 +83,7 @@ impl ShoppingBasketUseCase {
         }
     }
 
-    /// Creates a use case with a specific LLM implementation.
+    /// Creates a service contract with a specific LLM implementation.
     ///
     /// Useful for testing with a mock that has a fixed seed.
     #[must_use]
@@ -185,7 +185,7 @@ impl ShoppingBasketUseCase {
     }
 }
 
-impl UseCase for ShoppingBasketUseCase {
+impl ServiceContract for ShoppingBasketServiceContract {
     fn id(&self) -> &str {
         "shopping-basket"
     }
@@ -217,19 +217,19 @@ impl UseCase for ShoppingBasketUseCase {
     }
 }
 
-impl fmt::Display for ShoppingBasketUseCase {
+impl fmt::Display for ShoppingBasketServiceContract {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} (temperature={})", self.model, self.temperature)
     }
 }
 
-impl Default for ShoppingBasketUseCase {
+impl Default for ShoppingBasketServiceContract {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// The standard set of test instructions for the shopping basket use case.
+/// The standard set of test instructions for the shopping basket service contract.
 ///
 /// These 10 instructions cover a range of complexity: simple additions,
 /// removals, compound operations, and ambiguous natural language. They

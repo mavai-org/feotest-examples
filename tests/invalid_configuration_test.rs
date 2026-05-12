@@ -39,14 +39,14 @@ fn always_succeeds(_input: &str) -> TrialOutcome {
 #[should_panic(expected = "threshold approach must be set")]
 fn no_approach_samples_only() {
     let inputs = vec!["input".to_string()];
-    ProbabilisticTestBuilder::new("no-approach", &inputs, always_succeeds)
+    ProbabilisticTest::new("no-approach", &inputs, always_succeeds)
         // No .approach() call
         .run();
 }
 
 /// Error: No parameters specified at all via the simplified API.
 ///
-/// What it says: "Test this use case."
+/// What it says: "Test this service contract."
 /// Why invalid: no samples, no threshold, no confidence — nothing to
 ///   compute or verify.
 /// Fix: provide at least two of the parameter triangle:
@@ -141,7 +141,7 @@ fn incomplete_confidence_first_missing_confidence() {
 #[should_panic(expected = "Infeasible")]
 fn infeasible_verification() {
     let inputs = vec!["input".to_string()];
-    ProbabilisticTestBuilder::new("infeasible", &inputs, always_succeeds)
+    ProbabilisticTest::new("infeasible", &inputs, always_succeeds)
         .approach(ThresholdApproach::ThresholdFirst {
             samples: 5,
             min_pass_rate: 0.95,
@@ -202,7 +202,7 @@ fn over_specified_threshold_plus_confidence() {
 #[should_panic(expected = "REQUIRES_BASELINE")]
 fn sample_size_first_without_baseline_builder() {
     let inputs = vec!["input".to_string()];
-    ProbabilisticTestBuilder::new("no-baseline", &inputs, always_succeeds)
+    ProbabilisticTest::new("no-baseline", &inputs, always_succeeds)
         .approach(ThresholdApproach::SampleSizeFirst {
             samples: 100,
             confidence: 0.95,
@@ -223,7 +223,7 @@ fn sample_size_first_without_baseline_builder() {
 #[should_panic(expected = "REQUIRES_BASELINE_RATE")]
 fn confidence_first_without_baseline() {
     let inputs = vec!["input".to_string()];
-    ProbabilisticTestBuilder::new("no-baseline", &inputs, always_succeeds)
+    ProbabilisticTest::new("no-baseline", &inputs, always_succeeds)
         .approach(ThresholdApproach::ConfidenceFirst {
             confidence: 0.95,
             min_detectable_effect: 0.05,
@@ -244,7 +244,7 @@ fn confidence_first_without_baseline() {
 #[should_panic(expected = "min_pass_rate must be in [0, 1]")]
 fn min_pass_rate_above_one() {
     let inputs = vec!["input".to_string()];
-    ProbabilisticTestBuilder::new("bad-threshold", &inputs, always_succeeds)
+    ProbabilisticTest::new("bad-threshold", &inputs, always_succeeds)
         .approach(ThresholdApproach::ThresholdFirst {
             samples: 10,
             min_pass_rate: 1.5,
@@ -261,7 +261,7 @@ fn min_pass_rate_above_one() {
 #[should_panic(expected = "samples must be greater than 0")]
 fn zero_samples_threshold_first() {
     let inputs = vec!["input".to_string()];
-    ProbabilisticTestBuilder::new("zero-samples", &inputs, always_succeeds)
+    ProbabilisticTest::new("zero-samples", &inputs, always_succeeds)
         .approach(ThresholdApproach::ThresholdFirst {
             samples: 0,
             min_pass_rate: 0.90,
@@ -277,7 +277,7 @@ fn zero_samples_threshold_first() {
 #[should_panic(expected = "samples must be greater than 0")]
 fn zero_samples_sample_size_first() {
     let inputs = vec!["input".to_string()];
-    ProbabilisticTestBuilder::new("zero-samples", &inputs, always_succeeds)
+    ProbabilisticTest::new("zero-samples", &inputs, always_succeeds)
         .approach(ThresholdApproach::SampleSizeFirst {
             samples: 0,
             confidence: 0.95,
@@ -294,7 +294,7 @@ fn zero_samples_sample_size_first() {
 #[should_panic(expected = "inputs must not be empty")]
 fn empty_inputs() {
     let inputs: Vec<String> = vec![];
-    ProbabilisticTestBuilder::new("empty", &inputs, always_succeeds)
+    ProbabilisticTest::new("empty", &inputs, always_succeeds)
         .approach(ThresholdApproach::ThresholdFirst {
             samples: 50,
             min_pass_rate: 0.90,

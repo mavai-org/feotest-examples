@@ -1,4 +1,4 @@
-//! Probabilistic tests for the payment gateway use case.
+//! Probabilistic tests for the payment gateway service contract.
 //!
 //! These tests demonstrate threshold-first testing with an SLA-driven
 //! normative threshold. The payment gateway has an explicit contractual
@@ -10,10 +10,10 @@
 //! cargo test --test payment_gateway_test -- --nocapture
 //! ```
 
-mod usecases;
+mod service_contracts;
 
 use feotest::probabilistic_test;
-use usecases::PaymentGatewayUseCase;
+use service_contracts::PaymentGatewayServiceContract;
 
 /// SLA verification: "The payment gateway must succeed at least 99% of the time."
 ///
@@ -30,7 +30,7 @@ use usecases::PaymentGatewayUseCase;
     contract_ref = "Payment Provider SLA v2.3, Section 4.1"
 )]
 fn sla_verification() -> bool {
-    PaymentGatewayUseCase::new()
+    PaymentGatewayServiceContract::new()
         .charge_card("tok_visa_4242", 1999)
         .is_success()
 }
@@ -47,7 +47,7 @@ fn sla_verification() -> bool {
     threshold_origin = "sla"
 )]
 fn sla_smoke_test() -> bool {
-    PaymentGatewayUseCase::new()
+    PaymentGatewayServiceContract::new()
         .charge_card("tok_visa_4242", 1999)
         .is_success()
 }

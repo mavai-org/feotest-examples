@@ -1,21 +1,21 @@
-//! Explore experiment for the shopping basket use case.
+//! Explore experiment for the shopping basket service contract.
 //!
 //! Rapidly compares multiple LLM model configurations to identify which
 //! performs best before committing to a full measurement. Each configuration
-//! is a pre-built, immutable use case instance — the framework never mutates
-//! a use case during sampling.
+//! is a pre-built, immutable service contract instance — the framework never mutates
+//! a service contract during sampling.
 //!
 //! Run with:
 //! ```text
 //! cargo test --test shopping_basket_explore -- --nocapture
 //! ```
 
-#[path = "../usecases/mod.rs"]
-mod usecases;
+#[path = "../service_contracts/mod.rs"]
+mod service_contracts;
 
 use feotest::experiment::ExploreExperiment;
-use usecases::ShoppingBasketUseCase;
-use usecases::shopping_basket::standard_instructions;
+use service_contracts::ShoppingBasketServiceContract;
+use service_contracts::shopping_basket::standard_instructions;
 
 /// Compares different model configurations for the shopping basket.
 ///
@@ -32,16 +32,16 @@ fn explore_model_configurations() {
     let inputs = standard_instructions();
 
     // Each configuration is fully constructed and immutable.
-    let uc_low = ShoppingBasketUseCase::new()
+    let uc_low = ShoppingBasketServiceContract::new()
         .model("gpt-4o-mini")
         .temperature(0.1);
 
-    let uc_high = ShoppingBasketUseCase::new()
+    let uc_high = ShoppingBasketServiceContract::new()
         .model("gpt-4o-mini")
         .temperature(0.5);
 
     let result =
-        ExploreExperiment::new(&uc_low, 20, &inputs, |uc: &ShoppingBasketUseCase, input| {
+        ExploreExperiment::new(&uc_low, 20, &inputs, |uc: &ShoppingBasketServiceContract, input| {
             uc.translate_instruction(input)
         })
         .config(&uc_high)
