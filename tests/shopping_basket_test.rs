@@ -1,4 +1,4 @@
-//! Probabilistic tests for the shopping basket use case.
+//! Probabilistic tests for the shopping basket service contract.
 //!
 //! These tests verify that the shopping basket service meets its reliability
 //! threshold. They demonstrate the threshold-first and sample-size-first
@@ -6,7 +6,7 @@
 //! `#[probabilistic_test]` macro for compact declaration.
 //!
 //! The spec-driven test (`spec_driven_sample_size_first`) loads a committed
-//! baseline spec from `tests/baselines/ShoppingBasketUseCase-49a9.yaml`. This reflects the
+//! baseline spec from `tests/baselines/ShoppingBasketServiceContract-49a9.yaml`. This reflects the
 //! recommended workflow: measure once (rarely), commit the spec, then test
 //! against it repeatedly.
 //!
@@ -15,10 +15,10 @@
 //! cargo test --test shopping_basket_test -- --nocapture
 //! ```
 
-mod usecases;
+mod service_contracts;
 
 use feotest::probabilistic_test;
-use usecases::ShoppingBasketUseCase;
+use service_contracts::ShoppingBasketServiceContract;
 
 /// Threshold-first test with an explicit pass rate.
 ///
@@ -29,7 +29,7 @@ use usecases::ShoppingBasketUseCase;
 /// rate meets the threshold and computes the implied confidence.
 #[probabilistic_test(samples = 100, threshold = 0.80, threshold_origin = "empirical")]
 fn threshold_first_verification(input: &str) -> bool {
-    ShoppingBasketUseCase::new()
+    ShoppingBasketServiceContract::new()
         .translate_instruction(input)
         .is_success()
 }
@@ -41,7 +41,7 @@ fn threshold_first_verification(input: &str) -> bool {
 /// for early-warning monitoring rather than rigorous verification.
 #[probabilistic_test(samples = 20, threshold = 0.70, intent = "smoke")]
 fn smoke_test(input: &str) -> bool {
-    ShoppingBasketUseCase::new()
+    ShoppingBasketServiceContract::new()
         .translate_instruction(input)
         .is_success()
 }
@@ -52,7 +52,7 @@ fn smoke_test(input: &str) -> bool {
 /// set. Useful for isolating the performance of a specific instruction type.
 #[probabilistic_test(samples = 50, threshold = 0.75)]
 fn controlled_single_instruction() -> bool {
-    ShoppingBasketUseCase::new()
+    ShoppingBasketServiceContract::new()
         .translate_instruction("Add 2 apples")
         .is_success()
 }
@@ -71,11 +71,11 @@ fn controlled_single_instruction() -> bool {
 #[probabilistic_test(
     samples = 500,
     confidence = 0.95,
-    spec = "tests/baselines/ShoppingBasketUseCase-49a9.yaml",
+    spec = "tests/baselines/ShoppingBasketServiceContract-49a9.yaml",
     threshold_origin = "empirical"
 )]
 fn spec_driven_sample_size_first(input: &str) -> bool {
-    ShoppingBasketUseCase::new()
+    ShoppingBasketServiceContract::new()
         .translate_instruction(input)
         .is_success()
 }

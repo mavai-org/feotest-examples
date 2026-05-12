@@ -1,22 +1,22 @@
-//! Covariate declarations: declaring what external conditions affect a use case.
+//! Covariate declarations: declaring what external conditions affect a service contract.
 //!
 //! Covariates are environmental variables that the developer does not control
 //! but that influence outcomes: the day of the week, the deployment region,
-//! the LLM model behind an endpoint. A use case *declares* which covariates
+//! the LLM model behind an endpoint. A service contract *declares* which covariates
 //! matter; it does not capture their current values (that is a separate
 //! concern).
 //!
 //! Declarations serve three purposes:
 //!
-//! 1. **Baseline partitioning** — a use case that performs differently on
+//! 1. **Baseline partitioning** — a service contract that performs differently on
 //!    weekdays versus weekends can have separate baselines for each condition.
 //! 2. **Variance explanation** — when a test fails, the declared covariates
 //!    provide context ("this ran on a Sunday in the EU region").
 //! 3. **Experiment design** — knowing which covariates matter helps decide
 //!    whether to measure under controlled conditions or across the full space.
 //!
-//! This test file demonstrates how to declare covariates on use cases and
-//! how the framework accesses them. It uses the two example use cases:
+//! This test file demonstrates how to declare covariates on service contracts and
+//! how the framework accesses them. It uses the two example service contracts:
 //!
 //! - **Shopping basket** (LLM-backed): four covariates mixing built-in
 //!   temporal dimensions with custom external-dependency dimensions.
@@ -28,10 +28,10 @@
 //! cargo test --test covariate_declaration_test -- --nocapture
 //! ```
 
-mod usecases;
+mod service_contracts;
 
-use feotest::usecase::{CovariateCategory, CovariateDeclaration, UseCase, validate_covariates};
-use usecases::{PaymentGatewayUseCase, ShoppingBasketUseCase};
+use feotest::service_contract::{CovariateCategory, CovariateDeclaration, ServiceContract, validate_covariates};
+use service_contracts::{PaymentGatewayServiceContract, ShoppingBasketServiceContract};
 
 // ---------------------------------------------------------------------------
 // Covariate resolution: declared covariates must be resolvable
@@ -41,9 +41,9 @@ use usecases::{PaymentGatewayUseCase, ShoppingBasketUseCase};
 /// The shopping basket resolves all four of its declared covariates.
 #[test]
 fn shopping_basket_resolves_all_declared_covariates() {
-    let use_case = ShoppingBasketUseCase::new();
-    let declarations = use_case.covariates();
-    let profile = use_case.resolve_covariates();
+    let service_contract = ShoppingBasketServiceContract::new();
+    let declarations = service_contract.covariates();
+    let profile = service_contract.resolve_covariates();
     let entries = profile.entries();
 
     assert_eq!(
@@ -60,8 +60,8 @@ fn shopping_basket_resolves_all_declared_covariates() {
 /// The payment gateway resolves its single declared covariate (region).
 #[test]
 fn payment_gateway_resolves_region() {
-    let use_case = PaymentGatewayUseCase::new();
-    let profile = use_case.resolve_covariates();
+    let service_contract = PaymentGatewayServiceContract::new();
+    let profile = service_contract.resolve_covariates();
     let entries = profile.entries();
 
     assert_eq!(entries.len(), 1);
@@ -73,8 +73,8 @@ fn payment_gateway_resolves_region() {
 /// differently produce the same declarations but different profiles.
 #[test]
 fn resolved_values_reflect_instance_configuration() {
-    let us = PaymentGatewayUseCase::new().region("US");
-    let eu = PaymentGatewayUseCase::new().region("EU");
+    let us = PaymentGatewayServiceContract::new().region("US");
+    let eu = PaymentGatewayServiceContract::new().region("EU");
 
     // Same declarations...
     assert_eq!(us.covariates(), eu.covariates());
@@ -86,15 +86,15 @@ fn resolved_values_reflect_instance_configuration() {
 }
 
 // ---------------------------------------------------------------------------
-// Accessing covariate declarations through the UseCase trait
+// Accessing covariate declarations through the ServiceContract trait
 // ---------------------------------------------------------------------------
 
 /// The shopping basket declares four covariates: two built-in temporal
 /// dimensions and two custom dimensions for the LLM model and temperature.
 #[test]
 fn shopping_basket_declares_covariates() {
-    let use_case = ShoppingBasketUseCase::new();
-    let covariates = use_case.covariates();
+    let service_contract = ShoppingBasketServiceContract::new();
+    let covariates = service_contract.covariates();
 
     assert_eq!(covariates.len(), 4);
 
@@ -118,8 +118,8 @@ fn shopping_basket_declares_covariates() {
 /// different infrastructure), but not meaningfully by day of week.
 #[test]
 fn payment_gateway_declares_region_covariate() {
-    let use_case = PaymentGatewayUseCase::new();
-    let covariates = use_case.covariates();
+    let service_contract = PaymentGatewayServiceContract::new();
+    let covariates = service_contract.covariates();
 
     assert_eq!(covariates.len(), 1);
     assert_eq!(covariates[0].key(), "region");
@@ -130,15 +130,15 @@ fn payment_gateway_declares_region_covariate() {
 // Validation: the framework rejects duplicate covariate keys
 // ---------------------------------------------------------------------------
 
-/// Each covariate key must be unique within a use case. The validation
+/// Each covariate key must be unique within a service contract. The validation
 /// function catches duplicates early, before they cause subtle baseline
 /// matching errors downstream.
 #[test]
 fn covariate_declarations_have_unique_keys() {
-    let shopping = ShoppingBasketUseCase::new();
+    let shopping = ShoppingBasketServiceContract::new();
     validate_covariates(&shopping.covariates());
 
-    let payment = PaymentGatewayUseCase::new();
+    let payment = PaymentGatewayServiceContract::new();
     validate_covariates(&payment.covariates());
 }
 
@@ -149,7 +149,7 @@ fn covariate_declarations_have_unique_keys() {
 /// Built-in helpers create declarations with standard keys that the
 /// framework recognises for automatic temporal and infrastructure
 /// partitioning. Using them avoids typos and ensures consistent naming
-/// across use cases.
+/// across service contracts.
 #[test]
 fn built_in_helpers_produce_standard_keys() {
     let temporal = vec![
@@ -189,24 +189,24 @@ fn custom_covariates_span_the_full_taxonomy() {
 // Declarations are pure metadata
 // ---------------------------------------------------------------------------
 
-/// Covariate declarations do not affect use case behaviour. Two instances
+/// Covariate declarations do not affect service contract behaviour. Two instances
 /// with different configurations produce the same declarations — the
 /// declarations describe what CAN vary, not what IS varying right now.
 #[test]
 fn declarations_are_independent_of_instance_state() {
-    let low_temp = ShoppingBasketUseCase::new().temperature(0.1);
-    let high_temp = ShoppingBasketUseCase::new().temperature(0.9);
+    let low_temp = ShoppingBasketServiceContract::new().temperature(0.1);
+    let high_temp = ShoppingBasketServiceContract::new().temperature(0.9);
 
     assert_eq!(low_temp.covariates(), high_temp.covariates());
 }
 
-/// A use case that declares no covariates returns an empty vector.
-/// This is the default for the UseCase trait — only override when
-/// the use case genuinely has environmental sensitivities.
+/// A service contract that declares no covariates returns an empty vector.
+/// This is the default for the ServiceContract trait — only override when
+/// the service contract genuinely has environmental sensitivities.
 #[test]
 fn default_is_no_covariates() {
     struct Deterministic;
-    impl UseCase for Deterministic {
+    impl ServiceContract for Deterministic {
         fn id(&self) -> &str {
             "deterministic-service"
         }

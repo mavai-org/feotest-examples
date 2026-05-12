@@ -9,11 +9,11 @@
 //! cargo test --test payment_gateway_test_builder -- --nocapture
 //! ```
 
-mod usecases;
+mod service_contracts;
 
 use feotest::model::{TestIntent, ThresholdOrigin};
 use feotest::ptest::ProbabilisticTest;
-use usecases::PaymentGatewayUseCase;
+use service_contracts::PaymentGatewayServiceContract;
 
 /// SLA verification with the builder API.
 ///
@@ -21,10 +21,10 @@ use usecases::PaymentGatewayUseCase;
 #[test]
 fn sla_verification() {
     let inputs = vec!["tok_visa_4242:1999".to_string()];
-    let use_case = PaymentGatewayUseCase::new();
+    let service_contract = PaymentGatewayServiceContract::new();
 
-    ProbabilisticTest::new("PaymentGatewayUseCase", &inputs, |_input| {
-        use_case.charge_card("tok_visa_4242", 1999)
+    ProbabilisticTest::new("PaymentGatewayServiceContract", &inputs, |_input| {
+        service_contract.charge_card("tok_visa_4242", 1999)
     })
     .samples(200)
     .threshold(0.99)
@@ -39,10 +39,10 @@ fn sla_verification() {
 #[test]
 fn sla_smoke_test() {
     let inputs = vec!["tok_visa_4242:1999".to_string()];
-    let use_case = PaymentGatewayUseCase::new();
+    let service_contract = PaymentGatewayServiceContract::new();
 
-    ProbabilisticTest::new("PaymentGatewayUseCase", &inputs, |_input| {
-        use_case.charge_card("tok_visa_4242", 1999)
+    ProbabilisticTest::new("PaymentGatewayServiceContract", &inputs, |_input| {
+        service_contract.charge_card("tok_visa_4242", 1999)
     })
     .samples(50)
     .threshold(0.99)

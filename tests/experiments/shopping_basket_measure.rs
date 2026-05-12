@@ -1,7 +1,7 @@
-//! Measure experiment for the shopping basket use case.
+//! Measure experiment for the shopping basket service contract.
 //!
 //! Establishes an empirical baseline by running a large number of trials.
-//! The use case provides identity and covariate information; the baseline
+//! The service contract provides identity and covariate information; the baseline
 //! spec is written to `tests/baselines/` by default.
 //!
 //! Run with:
@@ -9,21 +9,21 @@
 //! cargo test --test shopping_basket_measure -- --nocapture
 //! ```
 
-#[path = "../usecases/mod.rs"]
-mod usecases;
+#[path = "../service_contracts/mod.rs"]
+mod service_contracts;
 
 use feotest::experiment::MeasureExperiment;
-use usecases::ShoppingBasketUseCase;
-use usecases::shopping_basket::standard_instructions;
+use service_contracts::ShoppingBasketServiceContract;
+use service_contracts::shopping_basket::standard_instructions;
 
-/// Establishes a baseline for the shopping basket use case.
+/// Establishes a baseline for the shopping basket service contract.
 ///
 /// Runs 1000 trials cycling through representative instructions.
 /// The spec is written to `tests/baselines/` by default.
 #[test]
 fn measure_shopping_basket_baseline() {
     let inputs = standard_instructions();
-    let uc = ShoppingBasketUseCase::new();
+    let uc = ShoppingBasketServiceContract::new();
 
     MeasureExperiment::new(&uc, 1000, &inputs, |input| {
         uc.translate_instruction(input)
