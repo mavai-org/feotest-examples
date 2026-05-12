@@ -156,7 +156,7 @@ src/
 ├── llm/                # LLM infrastructure (trait, mock, real providers)
 ├── shopping/           # Shopping domain types and validator
 ├── payment/            # Payment domain and mock gateway
-└── usecases/           # Use case implementations with service contracts
+└── usecases/           # Service contract implementations with service contracts
 tests/
 ├── shopping_basket_measure.rs   # Measure experiment (baseline)
 ├── shopping_basket_explore.rs   # Explore experiment (model comparison)

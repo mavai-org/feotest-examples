@@ -12,11 +12,9 @@ punit-examples demonstrates two-dimensional testing for the payment gateway: fun
 
 **punit-examples coverage**: `PaymentGatewayReliability` tests with `@Latency(p95Ms=500, p99Ms=1000)`, `assertLatency()`, `assertAll()`.
 
-### Covariate-aware baseline selection
+### ~~Covariate-aware baseline selection~~ (Implemented)
 
-punit-examples declares covariates on use cases (day of week, time of day, LLM model, temperature) and uses them for baseline matching. feotest declares `CovariateDeclaration` but does not yet implement covariate capture or baseline selection.
-
-**punit-examples coverage**: `ShoppingBasketUseCase` with `@DayGroup`, `@CovariateTimeOfDay`, `@Covariate(key="llm_model")`. `ShoppingBasketCovariateTest` exercises explicit model and temperature covariates.
+Covariate-aware baseline selection is implemented in feotest. The `SpecResolver::resolve_with_covariates()` method selects the best-matching baseline from multiple candidates using a two-phase algorithm: hard-gate filtering on `Configuration` covariates, then soft-match scoring on remaining covariates. The `ProbabilisticTest` and `ProbabilisticTestBuilder` accept `.service_contract(&uc)` to provide covariate context. Demonstrated in `shopping_basket_covariate_test.rs` with two temperature-partitioned baselines.
 
 ### Budget controls (time and token)
 
@@ -100,7 +98,7 @@ punit-examples generates a markdown verdict catalogue from test execution (summa
 
 These punit-examples features have no Rust equivalent because the underlying concern does not exist.
 
-### `@RegisterExtension` / `UseCaseProvider`
+### `@RegisterExtension` / `ServiceContractProvider`
 
 JUnit 5 extension mechanism for dependency injection. Rust uses direct construction and closures — no equivalent needed.
 

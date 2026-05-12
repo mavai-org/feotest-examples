@@ -73,7 +73,7 @@ known upfront from the contract — this is feotest's **normative approach**.
 ```
 tests/                      ← probabilistic tests (run frequently)
 tests/experiments/          ← measure and explore experiments (run rarely)
-tests/usecases/             ← feotest use case adapters (shared test module)
+tests/usecases/             ← feotest service contract adapters (shared test module)
     │
     ▼
 src/llm/                    ← application code (no feotest dependency)
@@ -83,7 +83,7 @@ tests/baselines/            ← committed baseline specs
 ```
 
 The `llm`, `shopping`, and `payment` modules in `src/` contain the application
-code. The `usecases` module under `tests/` wraps these in feotest use case
+code. The `usecases` module under `tests/` wraps these in feotest service contract
 adapters — it is test infrastructure, not part of the application. Experiments
 in `tests/experiments/` establish baselines (run rarely), and probabilistic tests
 in `tests/` verify behaviour against those baselines (run frequently, in CI).
@@ -122,7 +122,7 @@ cargo test --test shopping_basket_measure -- --nocapture
 ```
 
 The measurement runs 1000 samples, computes a Wilson score confidence interval
-for the true success probability, and writes a spec file to `tests/baselines/`. The filename encodes the use case
+for the true success probability, and writes a spec file to `tests/baselines/`. The filename encodes the service contract
 identity and covariate values so that different environmental conditions
 produce distinct baselines. The spec captures the observed success rate,
 the Wilson lower bound (used as the derived minimum pass rate), resolved
@@ -205,7 +205,7 @@ clear threshold from an SLA, policy, or prior measurement.
 ```rust
 #[probabilistic_test(samples = 100, threshold = 0.80, threshold_origin = "empirical")]
 fn threshold_first_verification(input: &str) -> bool {
-    ShoppingBasketUseCase::new()
+    ShoppingBasketServiceContract::new()
         .translate_instruction(input)
         .is_success()
 }
@@ -215,10 +215,10 @@ fn threshold_first_verification(input: &str) -> bool {
 
 ```rust
 let inputs = standard_instructions();
-let use_case = ShoppingBasketUseCase::new();
+let service_contract = ShoppingBasketServiceContract::new();
 
-ProbabilisticTest::new("ShoppingBasketUseCase", &inputs, |input| {
-    use_case.translate_instruction(input)
+ProbabilisticTest::new("ShoppingBasketServiceContract", &inputs, |input| {
+    service_contract.translate_instruction(input)
 })
 .samples(100)
 .threshold(0.80)
@@ -229,8 +229,8 @@ ProbabilisticTest::new("ShoppingBasketUseCase", &inputs, |input| {
 For SLA-driven services, add provenance metadata:
 
 ```rust
-ProbabilisticTest::new("PaymentGatewayUseCase", &inputs, |_input| {
-    use_case.charge_card("tok_visa_4242", 1999)
+ProbabilisticTest::new("PaymentGatewayServiceContract", &inputs, |_input| {
+    service_contract.charge_card("tok_visa_4242", 1999)
 })
 .samples(200)
 .threshold(0.99)
@@ -247,7 +247,7 @@ experiments always use the builder API.
 
 ```rust
 let inputs = standard_instructions();
-let uc = ShoppingBasketUseCase::new();
+let uc = ShoppingBasketServiceContract::new();
 
 MeasureExperiment::new(&uc, 1000, &inputs, |input| {
     uc.translate_instruction(input)
@@ -256,7 +256,7 @@ MeasureExperiment::new(&uc, 1000, &inputs, |input| {
 .run();
 ```
 
-The use case provides the ID, covariate declarations, and resolved
+The service contract provides the ID, covariate declarations, and resolved
 covariate values — all captured automatically in the baseline spec.
 The `inputs` are cycled round-robin across the requested sample count.
 The spec is written to `tests/baselines/` by default.
@@ -280,11 +280,11 @@ The recommended workflow:
 #[probabilistic_test(
     samples = 500,
     confidence = 0.95,
-    spec = "tests/baselines/ShoppingBasketUseCase-49a9.yaml",
+    spec = "tests/baselines/ShoppingBasketServiceContract-49a9.yaml",
     threshold_origin = "empirical"
 )]
 fn spec_driven_sample_size_first(input: &str) -> bool {
-    ShoppingBasketUseCase::new()
+    ShoppingBasketServiceContract::new()
         .translate_instruction(input)
         .is_success()
 }
@@ -294,10 +294,10 @@ fn spec_driven_sample_size_first(input: &str) -> bool {
 
 ```rust
 let inputs = standard_instructions();
-let use_case = ShoppingBasketUseCase::new();
+let service_contract = ShoppingBasketServiceContract::new();
 
-ProbabilisticTest::new("ShoppingBasketUseCase", &inputs, |input| {
-    use_case.translate_instruction(input)
+ProbabilisticTest::new("ShoppingBasketServiceContract", &inputs, |input| {
+    service_contract.translate_instruction(input)
 })
 .samples(500)
 .confidence(0.95)
@@ -305,7 +305,7 @@ ProbabilisticTest::new("ShoppingBasketUseCase", &inputs, |input| {
 .run();
 ```
 
-The builder resolves the baseline automatically from the use case ID — no
+The builder resolves the baseline automatically from the service contract ID — no
 explicit path needed. The test runs frequently — in CI, across releases —
 while the baseline is updated only when the service's expected behaviour
 changes.
@@ -322,7 +322,7 @@ full verification run.
 ```rust
 #[probabilistic_test(samples = 20, threshold = 0.70, intent = "smoke")]
 fn smoke_test(input: &str) -> bool {
-    ShoppingBasketUseCase::new()
+    ShoppingBasketServiceContract::new()
         .translate_instruction(input)
         .is_success()
 }
@@ -332,10 +332,10 @@ fn smoke_test(input: &str) -> bool {
 
 ```rust
 let inputs = standard_instructions();
-let use_case = ShoppingBasketUseCase::new();
+let service_contract = ShoppingBasketServiceContract::new();
 
-ProbabilisticTest::new("ShoppingBasketUseCase", &inputs, |input| {
-    use_case.translate_instruction(input)
+ProbabilisticTest::new("ShoppingBasketServiceContract", &inputs, |input| {
+    service_contract.translate_instruction(input)
 })
 .samples(20)
 .threshold(0.70)
@@ -346,22 +346,22 @@ ProbabilisticTest::new("ShoppingBasketUseCase", &inputs, |input| {
 ### Explore — comparing configurations
 
 Explore experiments compare multiple configurations side by side. Each
-configuration is a pre-built, immutable use case instance — the framework
-never mutates a use case during sampling. There is no macro equivalent;
+configuration is a pre-built, immutable service contract instance — the framework
+never mutates a service contract during sampling. There is no macro equivalent;
 explore experiments always use the builder API.
 
 ```rust
 let inputs = standard_instructions();
 
-let uc_low = ShoppingBasketUseCase::new()
+let uc_low = ShoppingBasketServiceContract::new()
     .model("gpt-4o-mini")
     .temperature(0.0);
 
-let uc_high = ShoppingBasketUseCase::new()
+let uc_high = ShoppingBasketServiceContract::new()
     .model("gpt-4o-mini")
     .temperature(1.0);
 
-let result = ExploreExperiment::new(&uc_low, 10, &inputs, ShoppingBasketUseCase::translate_instruction)
+let result = ExploreExperiment::new(&uc_low, 10, &inputs, ShoppingBasketServiceContract::translate_instruction)
     .config_named("high-temp", &uc_high)
     .output_dir("tests/explorations")
     .run();
@@ -371,8 +371,8 @@ for path in result.spec_paths().unwrap_or_default() {
 }
 ```
 
-The first use case passed to `new()` is both the first configuration and
-the source of the use case ID (via the `UseCase` trait). Each
+The first service contract passed to `new()` is both the first configuration and
+the source of the service contract ID (via the `ServiceContract` trait). Each
 configuration produces a separate YAML file under the output directory,
 designed to be diffed against one another.
 
@@ -425,7 +425,7 @@ and pricing before running large experiments.
 
 ## Typical workflow
 
-A typical workflow for the shopping basket use case:
+A typical workflow for the shopping basket service contract:
 
 1. **Explore** — compare models and temperatures to find the best configuration:
    ```bash
