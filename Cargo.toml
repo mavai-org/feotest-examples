@@ -5,7 +5,7 @@ edition = "2024"
 rust-version = "1.85"
 description = "Example experiments and probabilistic tests for feotest"
 license = "Apache-2.0"
-repository = "https://github.com/javai-org/feotest-examples"
+repository = "https://github.com/mavai-org/feotest-examples"
 
 [dependencies]
 feotest = { path = "../feotest" }

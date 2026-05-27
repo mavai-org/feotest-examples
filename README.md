@@ -1,7 +1,7 @@
 # feotest-examples
 
 Worked examples of probabilistic testing with the
-[feotest](https://github.com/javai-org/feotest) framework.
+[feotest](https://github.com/mavai-org/feotest) framework.
 
 ## Why this project exists
 
