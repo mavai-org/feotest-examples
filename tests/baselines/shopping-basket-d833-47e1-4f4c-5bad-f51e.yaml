@@ -1,0 +1,34 @@
+schemaVersion: feotest-spec-1
+useCaseId: shopping-basket
+generatedAt: 2026-04-06T19:54:14Z
+experimentId: baseline-v1
+footprint: d833846f
+covariates:
+  day-of-week: WEEKDAY
+  llm_model: gpt-4o-mini
+  temperature: '0.7'
+  time-of-day: 16:00/4h
+execution:
+  samplesPlanned: 1000
+  samplesExecuted: 1000
+  terminationReason: COMPLETED
+requirements:
+  minPassRate: 0.7877
+statistics:
+  successRate:
+    observed: 0.809
+    standardError: 0.0124
+    confidenceInterval95:
+    - 0.7835
+    - 0.8322
+  successes: 809
+  failures: 191
+  failureDistribution:
+    action: 33
+    parse: 158
+cost:
+  totalTimeMs: 32
+  avgTimePerSampleMs: 0
+  totalTokens: 0
+  avgTokensPerSample: 0
+contentFingerprint: a7448562bc2120cd45e9d34a5f117a6464ca03f56b45b71f0c0e097511c1c69b

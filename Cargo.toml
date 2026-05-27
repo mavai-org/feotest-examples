@@ -8,29 +8,12 @@ license = "Apache-2.0"
 repository = "https://github.com/javai-org/feotest-examples"
 
 [dependencies]
-feotest = { path = "../feotest", features = ["json-matcher"] }
+feotest = { path = "../feotest" }
 rand = "0.8"
 reqwest = { version = "0.12", features = ["blocking", "json"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tempfile = "3"
-
-
-[[test]]
-name = "shopping_basket_measure"
-path = "tests/experiments/shopping_basket_measure.rs"
-
-[[test]]
-name = "shopping_basket_explore"
-path = "tests/experiments/shopping_basket_explore.rs"
-
-[[test]]
-name = "payment_gateway_measure"
-path = "tests/experiments/payment_gateway_measure.rs"
-
-[[test]]
-name = "explore_shopping_temperatures"
-path = "tests/experiments/explore_shopping_temperatures.rs"
 
 [lints.rust]
 unsafe_code = "forbid"

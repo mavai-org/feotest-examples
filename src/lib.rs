@@ -34,4 +34,5 @@
 
 pub mod llm;
 pub mod payment;
+pub mod service_contracts;
 pub mod shopping;

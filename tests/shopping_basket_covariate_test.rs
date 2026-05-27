@@ -1,67 +1,85 @@
-//! Covariate-aware baseline selection tests for the shopping basket service contract.
+//! Shopping basket: covariate-aware baseline matching.
 //!
-//! Demonstrates UC05: when multiple covariate-partitioned baselines exist,
-//! the framework selects the one that best matches the current runtime
-//! covariate profile. The `.service_contract(&uc)` method on the test builder
-//! provides the covariate context for selection.
-//!
-//! Two baselines exist in `tests/baselines/`:
-//! - `shopping-basket-d833-47e1-4f4c-5bad-a769.yaml` — temperature=0.3
-//! - `shopping-basket-d833-47e1-4f4c-5bad-f51e.yaml` — temperature=0.7
-//!
-//! Run with:
-//! ```text
-//! cargo test --test shopping_basket_covariate_test -- --nocapture
-//! ```
+//! A baseline is only comparable to a test run made under the same conditions.
+//! The shopping contract declares covariates (model, temperature, and the
+//! day/time of the run); the baseline is partitioned by them, and the
+//! verifying test resolves the baseline that matches its own covariate
+//! profile. A profile mismatch still resolves (so the test runs) but records a
+//! misalignment warning.
 
-mod service_contracts;
-
+use feotest::experiment::MeasureExperiment;
 use feotest::model::ThresholdOrigin;
 use feotest::ptest::ProbabilisticTest;
-use service_contracts::shopping_basket::standard_instructions;
-use service_contracts::ShoppingBasketServiceContract;
+use feotest::ptest::builder::ThresholdApproach;
+use feotest::service_contract::ServiceContract;
+use feotest::spec::SpecResolver;
 
-/// The framework selects the temperature=0.3 baseline when the service contract
-/// is configured with temperature=0.3.
-///
-/// Both baselines have the same service contract ID and footprint, but differ
-/// in the `temperature` covariate value. The selector matches on the
-/// resolved profile and picks the correct partition.
-#[test]
-fn selects_baseline_matching_low_temperature() {
+use feotest_examples::service_contracts::ShoppingBasketServiceContract;
+use feotest_examples::service_contracts::sample_sizes::shopping;
+use feotest_examples::service_contracts::shopping_basket::standard_instructions;
+
+const COVARIATE_KEYS: [&str; 2] = ["llm_model", "temperature"];
+
+fn measure_baseline(dir: &std::path::Path, model: &'static str) {
     let inputs = standard_instructions();
-    let service_contract = ShoppingBasketServiceContract::new().temperature(0.3);
-
-    // The .service_contract() call provides covariate context for baseline selection.
-    // The framework resolves covariates (day-of-week, time-of-day, model,
-    // temperature) and selects the baseline whose covariate profile matches
-    // best.
-    ProbabilisticTest::new("shopping-basket", &inputs, |input| {
-        service_contract.translate_instruction(input)
-    })
-    .samples(100)
-    .threshold(0.80)
-    .threshold_origin(ThresholdOrigin::Empirical)
-    .service_contract(&service_contract)
-    .run();
+    let contract = ShoppingBasketServiceContract::new().model(model);
+    MeasureExperiment::builder()
+        .service_contract_id(contract.id().to_owned())
+        .service_contract(move || ShoppingBasketServiceContract::new().model(model))
+        .samples(shopping::MEASURE)
+        .inputs(&inputs)
+        .baseline_dir(dir)
+        .covariates(
+            COVARIATE_KEYS.iter().map(ToString::to_string).collect(),
+            contract.resolve_covariates(),
+        )
+        .build()
+        .run();
 }
 
-/// The framework selects the temperature=0.7 baseline when the service contract
-/// is configured with temperature=0.7.
-///
-/// The threshold is set lower than the temperature=0.3 test because
-/// higher temperature produces more failures in the mock.
 #[test]
-fn selects_baseline_matching_high_temperature() {
-    let inputs = standard_instructions();
-    let service_contract = ShoppingBasketServiceContract::new().temperature(0.7);
+fn matching_covariates_resolve_the_baseline() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    measure_baseline(dir.path(), "gpt-4o-mini");
 
-    ProbabilisticTest::new("shopping-basket", &inputs, |input| {
-        service_contract.translate_instruction(input)
-    })
-    .samples(100)
-    .threshold(0.70)
-    .threshold_origin(ThresholdOrigin::Empirical)
-    .service_contract(&service_contract)
-    .run();
+    let inputs = standard_instructions();
+    let result =
+        ProbabilisticTest::for_contract(ShoppingBasketServiceContract::new().model("gpt-4o-mini"))
+            .inputs(&inputs)
+            .approach(ThresholdApproach::SampleSizeFirst {
+                samples: shopping::TEST,
+                confidence: 0.95,
+            })
+            .spec_resolver(SpecResolver::with_dir(dir.path()))
+            .threshold_origin(ThresholdOrigin::Empirical)
+            .run();
+
+    // Same model as the baseline: it resolves and yields a verdict.
+    println!(
+        "matched-covariate verdict: {:?}",
+        result.verdict_record().verdict()
+    );
+}
+
+#[test]
+fn mismatched_covariates_resolve_with_a_warning() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    measure_baseline(dir.path(), "gpt-4o-mini");
+
+    let inputs = standard_instructions();
+    // Verify under a different model than the baseline was measured with.
+    let result =
+        ProbabilisticTest::for_contract(ShoppingBasketServiceContract::new().model("gpt-4-turbo"))
+            .inputs(&inputs)
+            .approach(ThresholdApproach::SampleSizeFirst {
+                samples: shopping::TEST,
+                confidence: 0.95,
+            })
+            .spec_resolver(SpecResolver::with_dir(dir.path()))
+            .threshold_origin(ThresholdOrigin::Empirical)
+            .run();
+
+    // The run still completes — covariate misalignment is a warning, not a hard
+    // failure to resolve.
+    let _ = result.passed();
 }

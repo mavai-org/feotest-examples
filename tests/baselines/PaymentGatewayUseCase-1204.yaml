@@ -1,0 +1,26 @@
+schemaVersion: feotest-spec-1
+useCaseId: PaymentGatewayUseCase
+generatedAt: 2026-04-05T16:00:47Z
+experimentId: baseline-v1
+footprint: 12044ecc
+execution:
+  samplesPlanned: 200
+  samplesExecuted: 200
+  terminationReason: COMPLETED
+requirements:
+  minPassRate: 0.9867
+statistics:
+  successRate:
+    observed: 1.0
+    standardError: 0.0
+    confidenceInterval95:
+    - 0.9812
+    - 1.0
+  successes: 200
+  failures: 0
+cost:
+  totalTimeMs: 26244
+  avgTimePerSampleMs: 131
+  totalTokens: 0
+  avgTokensPerSample: 0
+contentFingerprint: 1017351b1935959344d71fe43cdfd1235e431cf2ca7888cda9a2e3423604034f

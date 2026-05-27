@@ -156,13 +156,15 @@ src/
 ├── llm/                # LLM infrastructure (trait, mock, real providers)
 ├── shopping/           # Shopping domain types and validator
 ├── payment/            # Payment domain and mock gateway
-└── usecases/           # Service contract implementations with service contracts
+├── service_contracts/  # The units under test (ServiceContract trait) + sample-size policy
+└── bin/sentinel.rs     # Deployable reliability sentinel
 tests/
-├── shopping_basket_measure.rs   # Measure experiment (baseline)
-├── shopping_basket_explore.rs   # Explore experiment (model comparison)
-├── shopping_basket_test.rs      # Probabilistic tests
-└── payment_gateway_test.rs      # SLA verification tests
+├── *_test.rs           # Probabilistic tests, one file per scenario
+├── experiment_*.rs     # Measure / explore / optimize experiments
+└── common/             # Shared baseline helper
 ```
+
+See the [user guide](docs/USER-GUIDE.md) for a scenario-by-scenario tour.
 
 ## Licence
 
