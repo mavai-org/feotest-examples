@@ -50,10 +50,11 @@ statistical expectations, not a 100% sample pass rate.
 - **src/llm/** — LLM infrastructure: `ChatLlm` trait, mock with temperature-dependent reliability, real provider routing
 - **src/shopping/** — Shopping domain types, action model, and response validator
 - **src/payment/** — Payment gateway trait and mock with configurable failure rate
-- **tests/usecases/** — Service contract adapters wrapping application services for feotest (shared test module)
-- **tests/experiments/** — Measure and explore experiments that establish baselines
-- **tests/** — Probabilistic tests: macro variants (`*_test.rs`) and builder variants (`*_test_builder.rs`)
-- **tests/baselines/** — Committed baseline spec files produced by measure experiments
+- **src/service_contracts/** — The units under test on feotest's `ServiceContract` trait (`invoke` + `criteria`), plus the centralised `sample_sizes` policy. In `src/` so the same contract drives tests, experiments, and the sentinel.
+- **src/bin/sentinel.rs** — Deployable reliability sentinel binary (`feotest::sentinel::run_cli`).
+- **tests/*_test.rs** — Probabilistic tests, one file per scenario (SLA, inline, covariate, budget, pacing, threshold-approaches, diagnostics, conformance, invalid-config).
+- **tests/experiment_*.rs** — Measure / explore / optimize experiments.
+- **tests/common/** — Shared baseline-measuring helper (the shopping criterion is empirical, so its tests need a baseline).
 
 ## feotest dependency
 
