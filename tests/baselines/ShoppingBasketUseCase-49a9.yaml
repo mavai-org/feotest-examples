@@ -1,0 +1,29 @@
+schemaVersion: feotest-spec-1
+useCaseId: ShoppingBasketUseCase
+generatedAt: 2026-04-05T16:01:40Z
+experimentId: baseline-v1
+footprint: 49a90177
+execution:
+  samplesPlanned: 1000
+  samplesExecuted: 1000
+  terminationReason: COMPLETED
+requirements:
+  minPassRate: 0.9134
+statistics:
+  successRate:
+    observed: 0.928
+    standardError: 0.0082
+    confidenceInterval95:
+    - 0.9103
+    - 0.9424
+  successes: 928
+  failures: 72
+  failureDistribution:
+    action: 11
+    parse: 61
+cost:
+  totalTimeMs: 58
+  avgTimePerSampleMs: 0
+  totalTokens: 0
+  avgTokensPerSample: 0
+contentFingerprint: 2ee6fa9efa1b93a699e36aaf6681d05a4e3b455115379551ab6031061bc9d0bb
