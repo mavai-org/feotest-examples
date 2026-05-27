@@ -167,9 +167,11 @@ impl fmt::Display for ShoppingBasketServiceContract {
     }
 }
 
-/// A tuning configuration for the shopping service — the factor varied by
-/// explore and optimize experiments. `Serialize` lets the framework name each
-/// configuration's artifacts by a hash of the factor bundle.
+/// A tuning configuration for the shopping service.
+///
+/// This is the factor varied by explore and optimize experiments. `Serialize`
+/// lets the framework name each configuration's artifacts by a hash of the
+/// factor bundle.
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct LlmTuning {
     /// The model identifier.
