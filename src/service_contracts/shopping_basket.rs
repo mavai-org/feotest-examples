@@ -167,8 +167,47 @@ impl fmt::Display for ShoppingBasketServiceContract {
     }
 }
 
-/// The canonical instruction set, shared by experiments and tests so a
-/// baseline and the test that verifies it sample the same inputs.
+/// A tuning configuration for the shopping service — the factor varied by
+/// explore and optimize experiments. `Serialize` lets the framework name each
+/// configuration's artifacts by a hash of the factor bundle.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct LlmTuning {
+    /// The model identifier.
+    pub model: String,
+    /// The sampling temperature.
+    pub temperature: f64,
+}
+
+impl LlmTuning {
+    /// Creates a tuning bundle.
+    #[must_use]
+    pub fn new(model: impl Into<String>, temperature: f64) -> Self {
+        Self {
+            model: model.into(),
+            temperature,
+        }
+    }
+
+    /// Builds a contract configured by this tuning — the factory body for
+    /// explore and optimize experiments.
+    #[must_use]
+    pub fn contract(&self) -> ShoppingBasketServiceContract {
+        ShoppingBasketServiceContract::new()
+            .model(self.model.clone())
+            .temperature(self.temperature)
+    }
+}
+
+impl fmt::Display for LlmTuning {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}@{}", self.model, self.temperature)
+    }
+}
+
+/// The canonical instruction set.
+///
+/// Shared by experiments and tests so a baseline and the test that verifies it
+/// sample the same inputs.
 #[must_use]
 pub fn standard_instructions() -> Vec<String> {
     [
