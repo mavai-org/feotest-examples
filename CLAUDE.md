@@ -4,8 +4,8 @@ Example project demonstrating the [feotest](../feotest) probabilistic testing fr
 
 ## Terminology
 
-The canonical glossary for the javai project family is at
-[`../javai-R/docs/GLOSSARY.md`](../javai-R/docs/GLOSSARY.md). All code
+The canonical glossary for the mavai project family is at
+[`../mavai-R/docs/GLOSSARY.md`](../mavai-R/docs/GLOSSARY.md). All code
 comments, documentation, and discussions should use terms consistently with
 that glossary.
 
