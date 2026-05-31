@@ -8,7 +8,7 @@ license = "Apache-2.0"
 repository = "https://github.com/mavai-org/feotest-examples"
 
 [dependencies]
-feotest = { path = "../feotest" }
+feotest = "0.1"
 rand = "0.8"
 reqwest = { version = "0.12", features = ["blocking", "json"] }
 serde = { version = "1", features = ["derive"] }
