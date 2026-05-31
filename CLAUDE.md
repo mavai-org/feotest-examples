@@ -58,9 +58,18 @@ statistical expectations, not a 100% sample pass rate.
 
 ## feotest dependency
 
-The project uses a path dependency (`path = "../feotest"`) to reference the
-local feotest checkout. This means the sibling `feotest` directory must be
-present for the project to compile.
+The project depends on the published `feotest` crate from crates.io
+(`feotest = "0.1"`), exercising it exactly as an external consumer would.
+The sibling `feotest` checkout is no longer required to build.
+
+To develop the examples against unreleased local feotest changes, add a
+temporary path override at the workspace root rather than editing the
+dependency line:
+
+```toml
+[patch.crates-io]
+feotest = { path = "../feotest" }
+```
 
 ## Conventions
 
