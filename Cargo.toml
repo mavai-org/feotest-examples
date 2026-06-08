@@ -6,6 +6,8 @@ rust-version = "1.85"
 description = "Example experiments and probabilistic tests for feotest"
 license = "Apache-2.0"
 repository = "https://github.com/mavai-org/feotest-examples"
+keywords = ["testing", "probabilistic", "feotest", "examples"]
+categories = ["development-tools::testing"]
 
 [dependencies]
 feotest = "0.1"
