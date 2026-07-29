@@ -11,3 +11,6 @@ Cargo.lock
 
 # Agent-local guidance — not tracked in this public repo.
 CLAUDE.md
+
+# Machine-local Claude Code state — never tracked
+/.claude/settings.local.json
